@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escala MADRS — Evaluación Clínica</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f2ed;
+    --surface: #ede9e2;
+    --card: #ffffff;
+    --border: #ddd8cf;
+    --border-soft: #e8e4dc;
+    --accent: #7a9e87;      /* salvia verde */
+    --accent2: #c4856a;     /* terracota suave */
+    --accent3: #8fa8b8;     /* azul niebla */
+    --text: #3a3530;
+    --text-muted: #7a7168;
+    --text-dim: #b0a89e;
+    --selected-bg: #eef3f0;
+    --selected-border: #7a9e87;
+    --green: #7a9e87;
+    --yellow: #c9a96e;
+    --red: #c4856a;
+    --shadow: 0 2px 16px rgba(80,60,40,0.07);
+    --shadow-sm: 0 1px 6px rgba(80,60,40,0.05);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Jost', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.7;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 70% 50% at 15% 10%, rgba(122,158,135,0.08) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 60% at 90% 85%, rgba(196,133,106,0.06) 0%, transparent 55%),
+      radial-gradient(ellipse 40% 40% at 80% 15%, rgba(143,168,184,0.07) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* Header */
+  .header {
+    margin-bottom: 48px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-label {
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 40px;
+    font-weight: 300;
+    color: var(--text);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+
+  .header h1 em {
+    font-style: italic;
+    color: var(--accent2);
+  }
+
+  .header-desc {
+    margin-top: 12px;
+    color: var(--text-muted);
+    font-size: 12px;
+    max-width: 520px;
+    line-height: 1.6;
+  }
+
+  /* Progress bar */
+  .progress-wrap {
+    margin-bottom: 36px;
+  }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .progress-label {
+    color: var(--text-dim);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .progress-count {
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .progress-bar {
+    height: 3px;
+    background: var(--border-soft);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 3px;
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Question card — wraps all items in single-page view */
+  .question-card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 8px 32px 24px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+  }
+
+  /* ── Bloque de ítem (vista página única) ── */
+  .item-block {
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border-soft);
+    animation: fadeSlide 0.2s ease;
+  }
+
+  .item-block:last-child { border-bottom: none; }
+
+  .item-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .item-num-badge {
+    min-width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-dim);
+    flex-shrink: 0;
+    margin-top: 2px;
+    transition: all 0.15s;
+  }
+
+  .item-block.answered .item-num-badge {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .item-title-wrap { flex: 1; }
+
+  .item-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-weight: 400;
+    color: var(--text);
+    margin-bottom: 6px;
+    line-height: 1.25;
+  }
+
+  .item-guide {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.65;
+    font-style: italic;
+    padding: 10px 14px;
+    background: #f9f7f4;
+    border-left: 2px solid var(--border-soft);
+    border-radius: 0 6px 6px 0;
+  }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Botón ancho completo */
+  .btn-full {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 16px;
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    border-radius: 10px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.18s ease;
+  }
+
+  .btn-full.btn-primary {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 3px 14px rgba(122,158,135,0.25);
+  }
+
+  .btn-full.btn-primary:hover {
+    background: #6a8e76;
+    box-shadow: 0 4px 18px rgba(122,158,135,0.35);
+    transform: translateY(-1px);
+  }
+
+  .btn-full:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Opciones compactas */
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px 16px;
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    background: #fdfcfb;
+    text-align: left;
+    width: 100%;
+    color: var(--text);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .option:hover {
+    border-color: var(--accent);
+    background: #f2f7f4;
+    box-shadow: 0 3px 12px rgba(122,158,135,0.12);
+    transform: translateY(-1px);
+  }
+
+  .option.selected {
+    border-color: var(--selected-border);
+    background: var(--selected-bg);
+    box-shadow: 0 3px 14px rgba(122,158,135,0.15);
+  }
+
+  .option-score {
+    min-width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    transition: all 0.18s ease;
+    border: 1px solid var(--border);
+  }
+
+  .option.selected .option-score {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  .option-text {
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--text-muted);
+    transition: color 0.18s ease;
+    padding-top: 4px;
+  }
+
+  .option.selected .option-text {
+    color: var(--text);
+  }
+
+  /* Navigation */
+  .nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 24px;
+  }
+
+  .btn {
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 13px 30px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid;
+    transition: all 0.18s ease;
+  }
+
+  .btn-secondary {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text-muted);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--text-muted);
+    color: var(--text);
+    background: var(--surface);
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 3px 12px rgba(122,158,135,0.25);
+  }
+
+  .btn-primary:hover {
+    background: #6a8e76;
+    border-color: #6a8e76;
+    box-shadow: 0 4px 16px rgba(122,158,135,0.35);
+    transform: translateY(-1px);
+  }
+
+  .btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Results screen */
+  .results {
+    animation: fadeSlide 0.4s ease;
+  }
+
+  .score-display {
+    text-align: center;
+    padding: 52px 36px;
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .score-display::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 110%, rgba(122,158,135,0.08) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  .score-label {
+    color: var(--text-dim);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .score-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 100px;
+    font-weight: 300;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .score-max {
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-bottom: 22px;
+  }
+
+  .score-severity {
+    display: inline-block;
+    padding: 9px 28px;
+    border-radius: 24px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    border: 1px solid;
+  }
+
+  .severity-none    { color: #5e8f6e; border-color: #a8c9b3; background: #eef5f1; }
+  .severity-mild    { color: #9a7c3f; border-color: #d4b87a; background: #faf5ea; }
+  .severity-moderate{ color: #b8703a; border-color: #d4a07a; background: #faf0e8; }
+  .severity-severe  { color: #a04545; border-color: #cc9090; background: #faeaea; }
+
+  /* Breakdown */
+  .breakdown-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 300;
+    margin-bottom: 16px;
+    color: var(--text-muted);
+  }
+
+  .breakdown-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .breakdown-item:last-child { border-bottom: none; }
+
+  .breakdown-name {
+    flex: 1;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .breakdown-bar-wrap {
+    width: 110px;
+    height: 5px;
+    background: var(--border-soft);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .breakdown-bar {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+
+  .breakdown-val {
+    width: 34px;
+    text-align: right;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  /* Interpretation */
+  .interpretation {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 26px 30px;
+    margin-top: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .interpretation h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 300;
+    margin-bottom: 16px;
+    color: var(--text-muted);
+  }
+
+  .interp-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .interp-item {
+    padding: 13px 16px;
+    background: #faf8f5;
+    border-radius: 8px;
+    border: 1px solid var(--border-soft);
+  }
+
+  .interp-range {
+    color: var(--text-dim);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  .interp-desc {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .interp-item.current {
+    border-color: var(--accent);
+    background: #eef5f1;
+  }
+
+  .interp-item.current .interp-desc {
+    color: var(--text);
+    font-weight: 400;
+  }
+
+  .btn-copy {
+    display: block;
+    width: 100%;
+    margin-top: 28px;
+    padding: 15px;
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--accent);
+    border-radius: 8px;
+    color: var(--accent);
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+
+  .btn-copy:hover {
+    background: #eef5f1;
+    box-shadow: 0 3px 12px rgba(122,158,135,0.12);
+  }
+
+  .btn-restart {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    padding: 15px;
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+
+  .btn-restart:hover {
+    border-color: var(--text-muted);
+    color: var(--text);
+    background: var(--surface);
+  }
+
+  @media (max-width: 600px) {
+    .header h1 { font-size: 30px; }
+    .interp-grid { grid-template-columns: 1fr; }
+    .score-number { font-size: 72px; }
+    .question-card { padding: 24px 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <!-- Rendered by JS -->
+</div>
+
+<script>
+const questions = [
+  {
+    id: 1,
+    title: "Tristeza observada",
+    guide: "Representa el abatimiento, la melancolía y la desesperación (algo más que una simple tristeza normal y pasajera) que se refleja en la manera de hablar, la expresión facial y la postura. Evalúe el grado de incapacidad para animarse.",
+    options: [
+      { score: 0, text: "Sin tristeza." },
+      { score: 1, text: "(Nivel intermedio)" },
+      { score: 2, text: "Parece decaído/a pero se anima sin dificultad." },
+      { score: 3, text: "(Nivel intermedio)" },
+      { score: 4, text: "Parece triste y desgraciado/a la mayor parte del tiempo." },
+      { score: 5, text: "(Nivel intermedio)" },
+      { score: 6, text: "Parece siempre desgraciado/a. Extremadamente abatido/a." }
+    ]
+  },
+  {
+    id: 2,
+    title: "Tristeza declarada por el paciente",
+    guide: "Representa un estado de ánimo depresivo que se siente, sin tener en cuenta si se refleja en la apariencia o no. Incluye tristeza, abatimiento o el sentimiento de que no hay esperanza y nada ni nadie puede ayudarle. Evalúe de acuerdo con la intensidad, la duración y la medida en que el estado de ánimo se ve influido por los acontecimientos.",
+    options: [
+      { score: 0, text: "Tristeza esporádica según las circunstancias." },
+      { score: 1, text: "(Nivel intermedio)" },
+      { score: 2, text: "Triste o decaído/a, pero se anima sin dificultad." },
+      { score: 3, text: "(Nivel intermedio)" },
+      { score: 4, text: "Sentimientos generalizados de tristeza o melancolía. El estado de ánimo todavía se ve influido por circunstancias externas." },
+      { score: 5, text: "(Nivel intermedio)" },
+      { score: 6, text: "Abatimiento, desdicha o tristeza continuada o invariable." }
+    ]
+  },
+  {
+    id: 3,
+    title: "Tensión interna",
+    guide: "Representa sentimientos de malestar mal definido, irritabilidad, confusión interna y tensión mental hasta llegar al pánico, terror o angustia. Evalúe de acuerdo con la intensidad, frecuencia, duración y la medida en que se busca consuelo.",
+    options: [
+      { score: 0, text: "Apacible. Sólo tensión interna pasajera." },
+      { score: 1, text: "(Nivel intermedio)" },
+      { score: 2, text: "Sentimientos ocasionales de nerviosismo y malestar indefinido." },
+      { score: 3, text: "(Nivel intermedio)" },
+      { score: 4, text: "Sentimientos continuados de tensión interna o pánico intermitente que el sujeto sólo puede dominar con alguna dificultad." },
+      { score: 5, text: "(Nivel intermedio)" },
+      { score: 6, text: "Terror o angustia tenaz. Pánico irresistible." }
+    ]
+  },
+  {
+    id: 4,
+    title: "Sueño reducido",
+    guide: "Representa la reducción de la duración o profundidad del sueño comparada con las pautas normales del sujeto cuando se encuentra bien.",
+    options: [
+      { score: 0, text: "Duerme como siempre." },
+      { score: 1, text: "(Nivel intermedio)" },
+      { score: 2, text: "Ligera dificultad para dormirse o sueño ligeramente reducido, sueño ligero o perturbado." },
+      { score: 3, text: "(Nivel intermedio)" },
+      { score: 4, text: "Sueño reducido o interrumpido durante al menos 2 horas." },
+      { score: 5, text: "(Nivel intermedio)" },
+      { score: 6, text: "Menos de 2 o 3 horas de sueño." }
+    ]
+  },
+  {
+    id: 5,
+    title: "Apetito reducido",
+    guide: "Representa la sensación de pérdida de apetito comparada con el que tiene cuando se encuentra bien. Evalúe según la pérdida del deseo por la comida o la necesidad de forzarse a sí mismo/a para comer.",
+    options: [
+      { score: 0, text: "Apetito normal o aumentado." },
+      { score: 1, text: "(Nivel intermedio)" },
+      { score: 2, text: "Apetito ligeramente reducido." },
+      { score: 3, text: "(Nivel intermedio)" },
+      { score: 4, text: "Sin apetito. La comida es insípida." },
+      { score: 5, text: "(Nivel intermedio)" },
+      { score: 6, text: "Necesita persuasión para comer algo." }
+    ]
+  },
+  {
+    id: 6,
+    title: "Dificultades para concentrarse",
+    guide: "Representa las dificultades para centrar los pensamientos en algo hasta llegar a la falta de concentración incapacitante. Evalúe según la intensidad, frecuencia y grado de incapacidad resultante.",
+    options: [
+      { score: 0, text: "Ninguna dificultad para concentrarse." },
+      { score: 1, text: "(Nivel intermedio)" },
+      { score: 2, text: "Dificultades ocasionales para centrar los pensamientos." },
+      { score: 3, text: "(Nivel intermedio)" },
+      { score: 4, text: "Dificultades para concentrarse y seguir una idea que reduce la capacidad de leer o mantener una conversación." },
+      { score: 5, text: "(Nivel intermedio)" },
+      { score: 6, text: "Incapacidad de leer o mantener una conversación si no es con gran dificultad." }
+    ]
+  },
+  {
+    id: 7,
+    title: "Lasitud",
+    guide: "Representa la dificultad para empezar algo o la lentitud para iniciar y realizar las actividades diarias.",
+    options: [
+      { score: 0, text: "Casi sin dificultad para empezar algo. Sin apatía." },
+      { score: 1, text: "(Nivel intermedio)" },
+      { score: 2, text: "Dificultades para empezar actividades." },
+      { score: 3, text: "(Nivel intermedio)" },
+      { score: 4, text: "Dificultades para empezar actividades rutinarias sencillas que se llevan a cabo con esfuerzo." },
+      { score: 5, text: "(Nivel intermedio)" },
+      { score: 6, text: "Lasitud total. Incapacidad de hacer nada sin ayuda." }
+    ]
+  },
+  {
+    id: 8,
+    title: "Incapacidad para sentir",
+    guide: "Representa la experiencia subjetiva de un menor interés por el entorno o por actividades que habitualmente dan placer. La capacidad para reaccionar con la emoción adecuada a las circunstancias o personas se ve reducida.",
+    options: [
+      { score: 0, text: "Interés por el entorno y por otras personas." },
+      { score: 1, text: "(Nivel intermedio)" },
+      { score: 2, text: "Menor capacidad para disfrutar de las cosas que normalmente le interesan." },
+      { score: 3, text: "(Nivel intermedio)" },
+      { score: 4, text: "Pérdida de interés por el entorno. Pérdida de sentimientos respecto a los amigos y conocidos." },
+      { score: 5, text: "(Nivel intermedio)" },
+      { score: 6, text: "La experiencia de estar emocionalmente paralizado, incapacidad para sentir enfado, pena o placer y una total o incluso dolorosa falta de sentimientos hacia los parientes próximos y amigos." }
+    ]
+  },
+  {
+    id: 9,
+    title: "Pensamientos pesimistas",
+    guide: "Representa los pensamientos de culpabilidad, inferioridad, autorreproche, pecado, remordimiento y ruina.",
+    options: [
+      { score: 0, text: "Sin pensamientos pesimistas." },
+      { score: 1, text: "(Nivel intermedio)" },
+      { score: 2, text: "Ideas variables de fracaso, autorreproche o autodesprecio." },
+      { score: 3, text: "(Nivel intermedio)" },
+      { score: 4, text: "Autoacusaciones persistentes o ideas definidas, pero aún racionales de culpabilidad o pecado. Cada vez más pesimista respecto al futuro." },
+      { score: 5, text: "(Nivel intermedio)" },
+      { score: 6, text: "Alucinaciones de ruina, remordimiento o pecado irredimible. Autoacusaciones que son absurdas e inquebrantables." }
+    ]
+  },
+  {
+    id: 10,
+    title: "Pensamientos suicidas",
+    guide: "Representa el sentimiento de que no vale la pena vivir, que desearía que le llegara una muerte natural, pensamientos suicidas y preparativos para el suicidio. Los intentos de suicidio en sí no deberían influir en la evaluación.",
+    options: [
+      { score: 0, text: "Disfruta de la vida o la acepta tal como viene." },
+      { score: 1, text: "(Nivel intermedio)" },
+      { score: 2, text: "Cansado de vivir. Sólo pensamientos suicidas pasajeros." },
+      { score: 3, text: "(Nivel intermedio)" },
+      { score: 4, text: "Probablemente estaría mejor muerto/a. Los pensamientos suicidas son habituales, y se considera el suicidio como una posible solución, pero sin ninguna intención o plan específico." },
+      { score: 5, text: "(Nivel intermedio)" },
+      { score: 6, text: "Planes explícitos de suicidio cuando se presenta una oportunidad. Preparativos activos para el suicidio." }
+    ]
+  }
+];
+
+const SEVERITY = [
+  { min: 0, max: 6, label: "Sin depresión", cls: "severity-none" },
+  { min: 7, max: 19, label: "Depresión leve", cls: "severity-mild" },
+  { min: 20, max: 34, label: "Depresión moderada", cls: "severity-moderate" },
+  { min: 35, max: 60, label: "Depresión severa", cls: "severity-severe" }
+];
+
+let answers = new Array(questions.length).fill(null);
+let showResults = false;
+
+function getSeverity(score) {
+  return SEVERITY.find(s => score >= s.min && score <= s.max);
+}
+
+function getScoreColor(score) {
+  if (score <= 6) return 'var(--green)';
+  if (score <= 19) return 'var(--yellow)';
+  if (score <= 34) return '#ffab40';
+  return 'var(--red)';
+}
+
+function answered() { return answers.filter(a => a !== null).length; }
+function totalScore() { return answers.reduce((s, a) => s + (a || 0), 0); }
+
+function render() {
+  const app = document.getElementById('app');
+  if (showResults) { renderResults(app); return; }
+
+  const done = answered();
+  const pct  = (done / questions.length) * 100;
+
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">Evaluación psiquiátrica · Heteroadministrada</div>
+      <h1>Escala <em>MADRS</em></h1>
+      <p class="header-desc">Versión validada en español (CIBERSAM) · 10 ítems · Los niveles 0, 2, 4, 6 son anclas definidas; 1, 3, 5 son niveles intermedios.</p>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span class="progress-label">Completado</span>
+        <span class="progress-count">${done} / ${questions.length}</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: ${pct}%"></div>
+      </div>
+    </div>
+
+    <div class="question-card">
+      ${questions.map((q, i) => {
+        const sel = answers[i];
+        return `
+          <div class="item-block ${sel !== null ? 'answered' : ''}">
+            <div class="item-header">
+              <span class="item-num-badge">${q.id}</span>
+              <div class="item-title-wrap">
+                <div class="item-title">${q.title}</div>
+                <div class="item-guide">${q.guide}</div>
+              </div>
+            </div>
+            <div class="options">
+              ${q.options.map(opt => `
+                <button class="option ${sel === opt.score ? 'selected' : ''}"
+                        onclick="select(${i}, ${opt.score})">
+                  <span class="option-score">${opt.score}</span>
+                  <span class="option-text">${opt.text}</span>
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+
+    <button class="btn btn-primary btn-full" onclick="verResultado()" ${done < questions.length ? 'disabled' : ''}>
+      ${done < questions.length ? `Faltan ${questions.length - done} ítems` : 'Ver resultado →'}
+    </button>
+  `;
+}
+
+function renderResults(app) {
+  const total = answers.reduce((s, a) => s + (a || 0), 0);
+  const severity = getSeverity(total);
+  const scoreColor = getScoreColor(total);
+
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">Resultado de la evaluación</div>
+      <h1>Escala <em>MADRS</em></h1>
+    </div>
+
+    <div class="results">
+      <div class="score-display">
+        <div class="score-label">Puntuación total</div>
+        <div class="score-number" style="color: ${scoreColor}">${total}</div>
+        <div class="score-max">de 60 puntos posibles</div>
+        <span class="score-severity ${severity.cls}">${severity.label}</span>
+      </div>
+
+      <div class="breakdown-title">Desglose por ítem</div>
+      ${questions.map((q, i) => {
+        const val = answers[i] || 0;
+        const pct = (val / 6) * 100;
+        return `
+          <div class="breakdown-item">
+            <div class="breakdown-name">${i+1}. ${q.title}</div>
+            <div class="breakdown-bar-wrap">
+              <div class="breakdown-bar" style="width: ${pct}%"></div>
+            </div>
+            <div class="breakdown-val">${val}/6</div>
+          </div>
+        `;
+      }).join('')}
+
+      <div class="interpretation">
+        <h3>Interpretación de la escala</h3>
+        <div class="interp-grid">
+          ${SEVERITY.map(s => `
+            <div class="interp-item ${total >= s.min && total <= s.max ? 'current' : ''}">
+              <div class="interp-range">${s.min}–${s.max} puntos</div>
+              <div class="interp-desc">${s.label}</div>
+            </div>
+          `).join('')}
+        </div>
+        <p style="margin-top:16px; color: var(--text-dim); font-size: 11px; line-height: 1.7;">
+          Nota: Esta evaluación es una herramienta clínica de apoyo. El diagnóstico definitivo debe realizarse por un profesional de la salud mental considerando el cuadro clínico completo.
+        </p>
+      </div>
+
+      <button class="btn-copy" id="btnCopy" onclick="copyToClipboard()">⎘ Copiar para ficha clínica</button>
+      <button class="btn-restart" onclick="restart()">↩ Nueva evaluación</button>
+    </div>
+  `;
+}
+
+function buildPlainText() {
+  const total = answers.reduce((s, a) => s + (a || 0), 0);
+  const severity = getSeverity(total);
+  const date = new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric' });
+
+  const lines = [];
+  lines.push('ESCALA MADRS (Montgomery-Asberg Depression Rating Scale)');
+  lines.push('Fecha de aplicacion: ' + date);
+  lines.push('');
+  lines.push('ITEMS Y PUNTAJES:');
+  questions.forEach((q, i) => {
+    const val = answers[i] !== null ? answers[i] : 0;
+    const optText = q.options.find(o => o.score === val)?.text || '';
+    lines.push((i+1) + '. ' + q.title + ': ' + val + '/6');
+    lines.push('   ' + optText);
+  });
+  lines.push('');
+  lines.push('PUNTAJE TOTAL: ' + total + ' / 60');
+  lines.push('SEVERIDAD: ' + severity.label + ' (' + (severity.min) + '-' + (severity.max) + ' puntos)');
+  lines.push('');
+  lines.push('Rangos de referencia:');
+  lines.push('  0-6: Sin depresion');
+  lines.push('  7-19: Depresion leve');
+  lines.push('  20-34: Depresion moderada');
+  lines.push('  35-60: Depresion severa');
+  return lines.join('\n');
+}
+
+async function copyToClipboard() {
+  const text = buildPlainText();
+  const btn = document.getElementById('btnCopy');
+  try {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = '✓ Copiado';
+    btn.style.borderColor = 'var(--green)';
+    btn.style.color = 'var(--green)';
+    setTimeout(() => {
+      btn.textContent = '⎘ Copiar para ficha clínica';
+      btn.style.borderColor = '';
+      btn.style.color = '';
+    }, 2500);
+  } catch(e) {
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => { btn.textContent = '⎘ Copiar para ficha clínica'; }, 2500);
+  }
+}
+
+function select(i, score) {
+  answers[i] = score;
+  render();
+}
+
+function verResultado() {
+  if (answered() < questions.length) return;
+  showResults = true;
+  render();
+}
+
+function restart() {
+  answers = new Array(questions.length).fill(null);
+  showResults = false;
+  render();
+}
+
+render();
+</script>
+</body>
+</html>
