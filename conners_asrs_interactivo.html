@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASRS-Conners — Escala TDAH Adultos</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #edf2f0;
+    --surface: #e2ebe6;
+    --card: #ffffff;
+    --border: #cdddd5;
+    --border-soft: #d8e6de;
+    --accent: #5a8a72;      /* verde bosque — único para ASRS */
+    --accent2: #c49a5a;     /* ámbar cálido */
+    --accent-a: #5a8a72;    /* parte A — inatención */
+    --accent-b: #7a6aaa;    /* parte B — hiperactividad */
+    --text: #28342e;
+    --text-muted: #5e7268;
+    --text-dim: #9ab0a5;
+    --selected-bg: #eaf3ee;
+    --selected-border: #5a8a72;
+    --shadow: 0 2px 16px rgba(30,60,45,0.07);
+    --shadow-sm: 0 1px 6px rgba(30,60,45,0.05);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Jost', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.7;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 45% at 5% 10%,  rgba(90,138,114,0.09) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 55% at 92% 85%, rgba(196,154,90,0.07)  0%, transparent 55%),
+      radial-gradient(ellipse 35% 40% at 70% 5%,  rgba(122,106,170,0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ── Header ── */
+  .header {
+    margin-bottom: 44px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-label {
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 38px;
+    font-weight: 300;
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  .header h1 em { font-style: italic; color: var(--accent2); }
+
+  .header-desc {
+    margin-top: 12px;
+    color: var(--text-muted);
+    font-size: 12px;
+    max-width: 580px;
+    line-height: 1.65;
+  }
+
+  /* ── Instrucción ── */
+  .instruccion {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0;
+    padding: 18px 22px;
+    margin-bottom: 28px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .instruccion-title {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .instruccion p { color: var(--text-muted); font-size: 12.5px; line-height: 1.7; }
+
+  /* ── Leyenda de escala ── */
+  .scale-legend {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 7px;
+    margin-bottom: 28px;
+  }
+
+  .scale-leg-item {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 11px 8px;
+    box-shadow: var(--shadow-sm);
+    text-align: center;
+  }
+
+  .scale-leg-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 300;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 5px;
+  }
+
+  .scale-leg-txt { font-size: 10px; color: var(--text-muted); line-height: 1.3; }
+
+  /* ── Progreso ── */
+  .progress-wrap { margin-bottom: 24px; }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .progress-label { color: var(--text-dim); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+  .progress-count { color: var(--accent); font-size: 11px; font-weight: 500; }
+  .progress-bar   { height: 3px; background: var(--border-soft); border-radius: 3px; overflow: hidden; }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-a), var(--accent-b));
+    border-radius: 3px;
+    transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* ── Cabecera de parte ── */
+  .part-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 32px 0 14px;
+  }
+
+  .part-header:first-of-type { margin-top: 0; }
+
+  .part-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 16px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    border: 1px solid;
+    white-space: nowrap;
+  }
+
+  .pill-a { color: var(--accent-a); border-color: var(--accent-a); background: rgba(90,138,114,0.08); }
+  .pill-b { color: var(--accent-b); border-color: var(--accent-b); background: rgba(122,106,170,0.08); }
+
+  .part-line { flex: 1; height: 1px; background: var(--border-soft); }
+
+  /* ── Tarjeta de ítem ── */
+  .item-card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow-sm);
+    transition: border-color 0.15s;
+    animation: fadeSlide 0.25s ease;
+  }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .item-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .item-num {
+    min-width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    flex-shrink: 0;
+    margin-top: 2px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-dim);
+    transition: all 0.15s;
+  }
+
+  .item-card.answered-a .item-num { background: var(--accent-a); border-color: var(--accent-a); color: #fff; }
+  .item-card.answered-b .item-num { background: var(--accent-b); border-color: var(--accent-b); color: #fff; }
+
+  .item-text {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    padding-top: 2px;
+    transition: color 0.15s;
+  }
+
+  .item-card.answered-a .item-text,
+  .item-card.answered-b .item-text { color: var(--text); }
+
+  /* Botones de puntuación */
+  .score-btns {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 7px;
+    padding-left: 40px;
+  }
+
+  .score-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 4px;
+    border: 1px solid var(--border-soft);
+    border-radius: 9px;
+    background: #f8faf9;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: 'Jost', sans-serif;
+  }
+
+  .score-btn:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(90,138,114,0.12); }
+  .score-btn:hover.btn-a { border-color: var(--accent-a); background: var(--selected-bg); }
+  .score-btn:hover.btn-b { border-color: var(--accent-b); background: #f0eef8; }
+
+  .score-btn.active-a { border-color: var(--accent-a); background: var(--selected-bg); box-shadow: 0 3px 12px rgba(90,138,114,0.18); }
+  .score-btn.active-b { border-color: var(--accent-b); background: #f0eef8;           box-shadow: 0 3px 12px rgba(122,106,170,0.18); }
+
+  .score-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 400;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    transition: all 0.15s;
+  }
+
+  .score-btn.active-a .score-circle { background: var(--accent-a); border-color: var(--accent-a); color: #fff; }
+  .score-btn.active-b .score-circle { background: var(--accent-b); border-color: var(--accent-b); color: #fff; }
+
+  .score-lbl {
+    font-size: 9px;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 1.25;
+    transition: color 0.15s;
+  }
+
+  .score-btn.active-a .score-lbl { color: var(--accent-a); }
+  .score-btn.active-b .score-lbl { color: var(--accent-b); }
+
+  /* ── Subtotal live ── */
+  .subtotal-live {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-soft);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .subtotal-live strong { font-weight: 500; }
+
+  /* ── Botón resultado ── */
+  .btn-result {
+    display: block;
+    width: 100%;
+    margin-top: 28px;
+    padding: 16px;
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    box-shadow: 0 3px 14px rgba(90,138,114,0.28);
+  }
+
+  .btn-result:hover {
+    background: #4a7860;
+    box-shadow: 0 4px 18px rgba(90,138,114,0.38);
+    transform: translateY(-1px);
+  }
+
+  .btn-result:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* ── Resultados ── */
+  .results { animation: fadeSlide 0.4s ease; }
+
+  /* Scores de partes */
+  .scores-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .score-card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 32px 24px;
+    text-align: center;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .score-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .score-card.card-a::before { background: radial-gradient(ellipse 80% 55% at 50% 110%, rgba(90,138,114,0.08) 0%, transparent 65%); }
+  .score-card.card-b::before { background: radial-gradient(ellipse 80% 55% at 50% 110%, rgba(122,106,170,0.08) 0%, transparent 65%); }
+
+  .score-card-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .score-card-label.lbl-a { color: var(--accent-a); }
+  .score-card-label.lbl-b { color: var(--accent-b); }
+
+  .score-card-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 72px;
+    font-weight: 300;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .score-card-max { color: var(--text-dim); font-size: 11px; margin-bottom: 16px; }
+
+  .score-card-badge {
+    display: inline-block;
+    padding: 7px 18px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border: 1px solid;
+  }
+
+  .badge-improbable { color: #5e8f6e; border-color: #a8c9b3; background: #eef5f1; }
+  .badge-probable   { color: #9a7c3f; border-color: #d4b87a; background: #faf5ea; }
+  .badge-muy-probable { color: #7858b0; border-color: #bbaee0; background: #f3f0fa; }
+
+  /* Total card */
+  .total-card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 28px 32px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .total-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 56px;
+    font-weight: 300;
+    line-height: 1;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .total-info { flex: 1; }
+  .total-label { color: var(--text-dim); font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 5px; }
+  .total-desc  { color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+
+  /* Breakdown */
+  .breakdown-section {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 26px 28px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .breakdown-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 300;
+    margin-bottom: 20px;
+    color: var(--text-muted);
+  }
+
+  .breakdown-group-lbl {
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 6px 0;
+    margin: 8px 0 4px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .breakdown-group-lbl.lbl-a { color: var(--accent-a); }
+  .breakdown-group-lbl.lbl-b { color: var(--accent-b); }
+
+  .breakdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .breakdown-item:last-child { border-bottom: none; }
+  .breakdown-name { flex: 1; color: var(--text-muted); font-size: 11.5px; line-height: 1.35; }
+
+  .breakdown-bar-wrap { width: 90px; height: 5px; background: var(--border-soft); border-radius: 3px; overflow: hidden; }
+
+  .breakdown-bar   { height: 100%; border-radius: 3px; }
+  .breakdown-bar.ba { background: linear-gradient(90deg, var(--accent-a), #7ab89a); }
+  .breakdown-bar.bb { background: linear-gradient(90deg, var(--accent-b), #9a8acc); }
+
+  .breakdown-val { width: 28px; text-align: right; font-size: 12px; font-weight: 500; }
+  .breakdown-val.va { color: var(--accent-a); }
+  .breakdown-val.vb { color: var(--accent-b); }
+
+  /* Interpretation */
+  .interpretation {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 26px 28px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .interpretation h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 300;
+    margin-bottom: 16px;
+    color: var(--text-muted);
+  }
+
+  .interp-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+  .interp-item {
+    padding: 14px 16px;
+    background: #f8faf9;
+    border-radius: 8px;
+    border: 1px solid var(--border-soft);
+  }
+
+  .interp-range { color: var(--text-dim); font-size: 10px; letter-spacing: 0.1em; margin-bottom: 4px; text-transform: uppercase; }
+  .interp-desc  { color: var(--text-muted); font-size: 12px; margin-bottom: 4px; font-weight: 400; }
+  .interp-note  { color: var(--text-dim); font-size: 10.5px; font-style: italic; line-height: 1.4; }
+
+  .interp-item.current-improbable { border-color: #a8c9b3; background: #eef5f1; }
+  .interp-item.current-probable   { border-color: #d4b87a; background: #faf5ea; }
+  .interp-item.current-muy        { border-color: #bbaee0; background: #f3f0fa; }
+
+  .interp-item.current-improbable .interp-desc { color: #4a7a5a; }
+  .interp-item.current-probable   .interp-desc { color: #7a5a1a; }
+  .interp-item.current-muy        .interp-desc { color: #5a3890; }
+
+  /* Bottom buttons */
+  .btn-copy {
+    display: block; width: 100%; margin-top: 18px; padding: 15px;
+    font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    background: transparent; border: 1px solid var(--accent);
+    border-radius: 8px; color: var(--accent); cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .btn-copy:hover { background: var(--selected-bg); }
+
+  .btn-restart {
+    display: block; width: 100%; margin-top: 10px; padding: 15px;
+    font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 400;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-muted); cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .btn-restart:hover { border-color: var(--text-muted); color: var(--text); background: var(--surface); }
+
+  @media (max-width: 620px) {
+    .header h1 { font-size: 26px; }
+    .scale-legend { grid-template-columns: repeat(3, 1fr); gap: 5px; }
+    .score-btns { padding-left: 0; gap: 5px; }
+    .score-circle { width: 24px; height: 24px; font-size: 11px; }
+    .score-lbl { font-size: 8px; }
+    .scores-grid { grid-template-columns: 1fr; }
+    .interp-grid { grid-template-columns: 1fr; }
+    .total-card { flex-direction: column; text-align: center; gap: 12px; }
+    .score-card-number { font-size: 56px; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+const SCALE = [
+  { score: 0, label: "Nunca" },
+  { score: 1, label: "Raramente" },
+  { score: 2, label: "Algunas veces" },
+  { score: 3, label: "A menudo" },
+  { score: 4, label: "Muy a menudo" }
+];
+
+const partA = [
+  "¿Con qué frecuencia comete errores cuando tiene que trabajar en un proyecto aburrido o difícil?",
+  "¿Con qué frecuencia tiene dificultades para mantener su atención cuando está aburrido o con un trabajo repetitivo?",
+  "¿Con qué frecuencia tiene dificultades para concentrarse en cuestiones que otras personas le comunican aún cuando se dirijan directamente a usted?",
+  "¿Con qué frecuencia tiene dificultades para concretar los detalles de un proyecto una vez que las partes más difíciles se han conseguido?",
+  "¿Con qué frecuencia tiene dificultades en ordenar las cosas en una tarea que requiere organización?",
+  "Cuando tiene una tarea que requiere mucha reflexión, ¿con qué frecuencia la evita o demora en iniciarla?",
+  "¿Con qué frecuencia extravía cosas o tiene dificultades para encontrarlas en su casa o en el trabajo?",
+  "¿Con qué frecuencia se distrae por actividad o ruido a su alrededor?",
+  "¿Con qué frecuencia tiene dificultades para recordar citas u obligaciones?"
+];
+
+const partB = [
+  "¿Con qué frecuencia se inquieta o mueve sus manos o pies cuando tiene que permanecer sentado durante largo tiempo?",
+  "¿Con qué frecuencia abandona su asiento en reuniones o en otras situaciones en las cuales debe permanecer sentado?",
+  "¿Con qué frecuencia tiene sensación de inquietud?",
+  "¿Con qué frecuencia tiene dificultades para relajarse durante el tiempo libre?",
+  "¿Con qué frecuencia se nota forzado en realizar actividades, como impulsado por un motor?",
+  "¿Con qué frecuencia habla demasiado en ambientes sociales?",
+  "Cuando mantiene una conversación, ¿con qué frecuencia permite que los demás terminen sus intervenciones?",
+  "¿Con qué frecuencia tiene dificultad para esperar su turno en situaciones que requieran una espera?",
+  "¿Con qué frecuencia interrumpe a los demás mientras están ocupados?"
+];
+
+const MAX_PART = partA.length * 4; // 36 cada parte
+
+function getLevel(score) {
+  if (score >= 24) return { label: "Muy probable TDAH",    cls: "badge-muy-probable",  interpCls: "current-muy" };
+  if (score >= 17) return { label: "Probable TDAH",        cls: "badge-probable",       interpCls: "current-probable" };
+  return              { label: "Poco probable TDAH",   cls: "badge-improbable",     interpCls: "current-improbable" };
+}
+
+let answersA    = new Array(partA.length).fill(null);
+let answersB    = new Array(partB.length).fill(null);
+let showResults = false;
+
+function doneA() { return answersA.filter(a => a !== null).length; }
+function doneB() { return answersB.filter(a => a !== null).length; }
+function totalDone() { return doneA() + doneB(); }
+function totalItems() { return partA.length + partB.length; }
+function scoreA() { return answersA.reduce((s, a) => s + (a || 0), 0); }
+function scoreB() { return answersB.reduce((s, a) => s + (a || 0), 0); }
+
+function render() {
+  const app = document.getElementById('app');
+  if (showResults) { renderResults(app); return; }
+
+  const done  = totalDone();
+  const total = totalItems();
+  const pct   = (done / total) * 100;
+  const sA    = scoreA();
+  const sB    = scoreB();
+
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">Evaluación · Autoinforme adultos</div>
+      <h1>Escala <em>Conners</em> para TDAH en Adultos</h1>
+      <p class="header-desc">ASRS · 18 ítems · Responda según cómo se ha sentido y actuado en los <strong>últimos seis meses</strong>. Los síntomas deben haberse iniciado antes de los 7 años. Entregue a su profesional de salud.</p>
+    </div>
+
+    <div class="instruccion">
+      <div class="instruccion-title">Instrucciones</div>
+      <p>Seleccione el número que mejor describe con qué frecuencia ha experimentado cada situación en los últimos seis meses. No existen respuestas correctas o incorrectas. Sea lo más honesto/a posible.</p>
+    </div>
+
+    <div class="scale-legend">
+      ${SCALE.map(s => `
+        <div class="scale-leg-item">
+          <div class="scale-leg-num">${s.score}</div>
+          <div class="scale-leg-txt">${s.label}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span class="progress-label">Completado</span>
+        <span class="progress-count">${done} / ${total}</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${pct}%"></div>
+      </div>
+    </div>
+
+    <!-- PARTE A -->
+    <div class="part-header">
+      <span class="part-pill pill-a">Parte A · Inatención · 9 ítems</span>
+      <div class="part-line"></div>
+    </div>
+
+    ${partA.map((q, i) => `
+      <div class="item-card ${answersA[i] !== null ? 'answered-a' : ''}">
+        <div class="item-top">
+          <span class="item-num">${i+1}</span>
+          <span class="item-text">${q}</span>
+        </div>
+        <div class="score-btns">
+          ${SCALE.map(s => `
+            <button class="score-btn btn-a ${answersA[i] === s.score ? 'active-a' : ''}"
+                    onclick="selectA(${i}, ${s.score})">
+              <span class="score-circle">${s.score}</span>
+              <span class="score-lbl">${s.label}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `).join('')}
+
+    <div class="subtotal-live">
+      <span>Subtotal Parte A:</span>
+      <strong style="color:var(--accent-a); font-size:15px">${sA}</strong>
+      <span>/ ${MAX_PART}</span>
+      ${doneA() === partA.length ? `<span style="color:var(--text-dim)">· ${getLevel(sA).label}</span>` : ''}
+    </div>
+
+    <!-- PARTE B -->
+    <div class="part-header">
+      <span class="part-pill pill-b">Parte B · Hiperactividad / Impulsividad · 9 ítems</span>
+      <div class="part-line"></div>
+    </div>
+
+    ${partB.map((q, i) => `
+      <div class="item-card ${answersB[i] !== null ? 'answered-b' : ''}">
+        <div class="item-top">
+          <span class="item-num">${i + partA.length + 1}</span>
+          <span class="item-text">${q}</span>
+        </div>
+        <div class="score-btns">
+          ${SCALE.map(s => `
+            <button class="score-btn btn-b ${answersB[i] === s.score ? 'active-b' : ''}"
+                    onclick="selectB(${i}, ${s.score})">
+              <span class="score-circle">${s.score}</span>
+              <span class="score-lbl">${s.label}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `).join('')}
+
+    <div class="subtotal-live">
+      <span>Subtotal Parte B:</span>
+      <strong style="color:var(--accent-b); font-size:15px">${sB}</strong>
+      <span>/ ${MAX_PART}</span>
+      ${doneB() === partB.length ? `<span style="color:var(--text-dim)">· ${getLevel(sB).label}</span>` : ''}
+    </div>
+
+    <button class="btn-result" onclick="verResultado()" ${done < total ? 'disabled' : ''}>
+      ${done < total ? `Faltan ${total - done} preguntas` : 'Ver resultado →'}
+    </button>
+  `;
+}
+
+function renderResults(app) {
+  const sA   = scoreA();
+  const sB   = scoreB();
+  const sT   = sA + sB;
+  const lvA  = getLevel(sA);
+  const lvB  = getLevel(sB);
+
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">Resultado de la evaluación</div>
+      <h1>Escala <em>Conners</em> para TDAH en Adultos</h1>
+    </div>
+
+    <div class="results">
+
+      <div class="scores-grid">
+        <div class="score-card card-a">
+          <div class="score-card-label lbl-a">Parte A · Inatención</div>
+          <div class="score-card-number" style="color:var(--accent-a)">${sA}</div>
+          <div class="score-card-max">de ${MAX_PART} puntos · 9 ítems</div>
+          <span class="score-card-badge ${lvA.cls}">${lvA.label}</span>
+        </div>
+        <div class="score-card card-b">
+          <div class="score-card-label lbl-b">Parte B · Hiperactividad</div>
+          <div class="score-card-number" style="color:var(--accent-b)">${sB}</div>
+          <div class="score-card-max">de ${MAX_PART} puntos · 9 ítems</div>
+          <span class="score-card-badge ${lvB.cls}">${lvB.label}</span>
+        </div>
+      </div>
+
+      <div class="total-card">
+        <div class="total-num">${sT}</div>
+        <div class="total-info">
+          <div class="total-label">Puntuación total combinada</div>
+          <div class="total-desc">Parte A (${sA}) + Parte B (${sB}) = <strong>${sT}</strong> de ${MAX_PART * 2} puntos posibles. La interpretación clínica se realiza por subescala, no por puntaje total.</div>
+        </div>
+      </div>
+
+      <div class="breakdown-section">
+        <div class="breakdown-title">Desglose por ítem</div>
+
+        <div class="breakdown-group-lbl lbl-a">Parte A — Inatención</div>
+        ${partA.map((q, i) => {
+          const v = answersA[i] || 0;
+          return `
+            <div class="breakdown-item">
+              <div class="breakdown-name">${i+1}. ${q}</div>
+              <div class="breakdown-bar-wrap"><div class="breakdown-bar ba" style="width:${(v/4)*100}%"></div></div>
+              <div class="breakdown-val va">${v}/4</div>
+            </div>`;
+        }).join('')}
+
+        <div class="breakdown-group-lbl lbl-b" style="margin-top:12px">Parte B — Hiperactividad / Impulsividad</div>
+        ${partB.map((q, i) => {
+          const v = answersB[i] || 0;
+          return `
+            <div class="breakdown-item">
+              <div class="breakdown-name">${i + partA.length + 1}. ${q}</div>
+              <div class="breakdown-bar-wrap"><div class="breakdown-bar bb" style="width:${(v/4)*100}%"></div></div>
+              <div class="breakdown-val vb">${v}/4</div>
+            </div>`;
+        }).join('')}
+      </div>
+
+      <div class="interpretation">
+        <h3>Criterios de interpretación (por subescala)</h3>
+        <div class="interp-grid">
+          <div class="interp-item ${sA <= 16 && sB <= 16 ? 'current-improbable' : (sA <= 16 || sB <= 16 ? '' : '')}
+            ${(sA <= 16 || sB <= 16) && !(sA >= 17 || sB >= 17) ? 'current-improbable' : ''}">
+            <div class="interp-range">0 – 16 puntos</div>
+            <div class="interp-desc">Poco probable</div>
+            <div class="interp-note">TDAH adulto poco probable según esta subescala.</div>
+          </div>
+          <div class="interp-item">
+            <div class="interp-range">17 – 23 puntos</div>
+            <div class="interp-desc">Probable</div>
+            <div class="interp-note">Es probable TDAH adulto. Requiere evaluación clínica.</div>
+          </div>
+          <div class="interp-item">
+            <div class="interp-range">24 – 36 puntos</div>
+            <div class="interp-desc">Muy probable</div>
+            <div class="interp-note">Muy probable TDAH adulto. Derivación recomendada.</div>
+          </div>
+        </div>
+        <div style="margin-top:14px; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div style="padding:12px 14px; border-radius:8px; border:1px solid var(--border-soft); background:#f8faf9;">
+            <div style="font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent-a); margin-bottom:4px;">Parte A resultado</div>
+            <div style="font-size:13px; color:var(--text); font-weight:400;">${lvA.label} <span style="color:var(--text-dim); font-size:12px;">(${sA} pts)</span></div>
+          </div>
+          <div style="padding:12px 14px; border-radius:8px; border:1px solid var(--border-soft); background:#f8faf9;">
+            <div style="font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent-b); margin-bottom:4px;">Parte B resultado</div>
+            <div style="font-size:13px; color:var(--text); font-weight:400;">${lvB.label} <span style="color:var(--text-dim); font-size:12px;">(${sB} pts)</span></div>
+          </div>
+        </div>
+        <p style="margin-top:16px; color:var(--text-dim); font-size:11px; line-height:1.7;">
+          Nota: Esta es una escala de autoinforme para cribado. Un resultado elevado no confirma diagnóstico de TDAH; requiere evaluación clínica completa. Recordar que los síntomas deben haberse iniciado antes de los 7 años. Fuente: Adult ADHD Self-Report Scale (ASRS), adaptación Conners (Rev Neurol 2009).
+        </p>
+      </div>
+
+      <button class="btn-copy" id="btnCopy" onclick="copyToClipboard()">⎘ Copiar para ficha clínica</button>
+      <button class="btn-restart" onclick="restart()">↩ Nueva evaluación</button>
+    </div>
+  `;
+}
+
+function buildPlainText() {
+  const sA   = scoreA();
+  const sB   = scoreB();
+  const sT   = sA + sB;
+  const lvA  = getLevel(sA);
+  const lvB  = getLevel(sB);
+  const date = new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric' });
+  const labs = ['Nunca (0)', 'Raramente (1)', 'Algunas veces (2)', 'A menudo (3)', 'Muy a menudo (4)'];
+
+  const lines = [];
+  lines.push('ESCALA CONNERS PARA TDAH EN ADULTOS (ASRS)');
+  lines.push('Fecha de aplicacion: ' + date);
+  lines.push('Periodo de referencia: ultimos seis meses');
+  lines.push('');
+  lines.push('--- PARTE A: INATENCION (items 1-9) ---');
+  partA.forEach((q, i) => {
+    const v = answersA[i] || 0;
+    lines.push((i+1) + '. ' + q);
+    lines.push('   ' + labs[v]);
+  });
+  lines.push('SUBTOTAL PARTE A: ' + sA + ' / 36  ->  ' + lvA.label);
+  lines.push('');
+  lines.push('--- PARTE B: HIPERACTIVIDAD / IMPULSIVIDAD (items 10-18) ---');
+  partB.forEach((q, i) => {
+    const v = answersB[i] || 0;
+    lines.push((i + partA.length + 1) + '. ' + q);
+    lines.push('   ' + labs[v]);
+  });
+  lines.push('SUBTOTAL PARTE B: ' + sB + ' / 36  ->  ' + lvB.label);
+  lines.push('');
+  lines.push('PUNTUACION TOTAL (A+B): ' + sT + ' / 72');
+  lines.push('');
+  lines.push('Criterios de interpretacion (por subescala):');
+  lines.push('  0-16:  Poco probable TDAH adulto');
+  lines.push('  17-23: Probable TDAH adulto');
+  lines.push('  24-36: Muy probable TDAH adulto');
+  lines.push('');
+  lines.push('Nota: escala de cribado. Los sintomas deben haberse iniciado antes de los 7 anos.');
+  lines.push('Fuente: Adult ADHD Self-Report Scale (ASRS). Rev Neurol 2009;48(Supl 2):S95-S99.');
+  return lines.join('\n');
+}
+
+async function copyToClipboard() {
+  const text = buildPlainText();
+  const btn  = document.getElementById('btnCopy');
+  try {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = '✓ Copiado';
+    btn.style.borderColor = '#7a6aaa';
+    btn.style.color = '#7a6aaa';
+    setTimeout(() => {
+      btn.textContent = '⎘ Copiar para ficha clínica';
+      btn.style.borderColor = '';
+      btn.style.color = '';
+    }, 2500);
+  } catch(e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => { btn.textContent = '⎘ Copiar para ficha clínica'; }, 2500);
+  }
+}
+
+function selectA(i, v) { answersA[i] = v; render(); }
+function selectB(i, v) { answersB[i] = v; render(); }
+function verResultado() { if (totalDone() < totalItems()) return; showResults = true; render(); }
+function restart()      { answersA = new Array(partA.length).fill(null); answersB = new Array(partB.length).fill(null); showResults = false; render(); }
+
+render();
+</script>
+</body>
+</html>

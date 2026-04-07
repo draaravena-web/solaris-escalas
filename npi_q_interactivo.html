@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NPI-Q — Inventario Neuropsiquiátrico</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0ede8;
+    --surface: #e8e3dc;
+    --card: #ffffff;
+    --border: #d8d0c4;
+    --border-soft: #e4ddd4;
+    --accent: #9a7848;       /* ámbar tierra — neurología */
+    --accent2: #6a8a78;      /* verde salvia */
+    --accent3: #a05858;      /* rojo apagado — síntomas presentes */
+    --text: #332a20;
+    --text-muted: #6e6050;
+    --text-dim: #b0a090;
+    --shadow: 0 2px 16px rgba(60,40,20,0.07);
+    --shadow-sm: 0 1px 6px rgba(60,40,20,0.05);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Jost', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.7;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 45% at 8% 10%,  rgba(154,120,72,0.08) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 55% at 90% 85%, rgba(106,138,120,0.07) 0%, transparent 55%),
+      radial-gradient(ellipse 35% 40% at 72% 5%,  rgba(160,88,88,0.05)  0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ── Header ── */
+  .header {
+    margin-bottom: 40px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-label { color: var(--accent); font-size: 10px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; margin-bottom: 14px; }
+
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 38px;
+    font-weight: 300;
+    color: var(--text);
+    line-height: 1.15;
+  }
+
+  .header h1 em { font-style: italic; color: var(--accent); }
+  .header-desc { margin-top: 12px; color: var(--text-muted); font-size: 12px; max-width: 620px; line-height: 1.65; }
+
+  /* ── Instrucción ── */
+  .instruccion {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0;
+    padding: 18px 22px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .instruccion-title { font-size: 10px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  .instruccion p { color: var(--text-muted); font-size: 12.5px; line-height: 1.75; }
+
+  /* ── Informante ── */
+  .informante-card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .informante-title { font-size: 10px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent2); margin-bottom: 12px; }
+
+  .informante-opts { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  .informante-btn {
+    padding: 9px 18px;
+    border: 1px solid var(--border-soft);
+    border-radius: 20px;
+    background: var(--surface);
+    color: var(--text-muted);
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .informante-btn:hover { border-color: var(--accent2); color: var(--text); }
+  .informante-btn.active { border-color: var(--accent2); background: #eef3f0; color: var(--text); font-weight: 500; }
+
+  /* ── Progreso ── */
+  .progress-wrap { margin-bottom: 24px; }
+  .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .progress-label { color: var(--text-dim); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+  .progress-count { color: var(--accent); font-size: 11px; font-weight: 500; }
+  .progress-bar   { height: 3px; background: var(--border-soft); border-radius: 3px; overflow: hidden; }
+  .progress-fill  { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 3px; transition: width 0.4s cubic-bezier(0.4,0,0.2,1); }
+
+  /* ── Tarjeta de síntoma ── */
+  .symptom-card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 13px;
+    padding: 20px 22px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow-sm);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    animation: fadeSlide 0.25s ease;
+  }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .symptom-card.present  { border-color: rgba(160,88,88,0.35); background: #fff9f9; }
+  .symptom-card.absent   { border-color: var(--border-soft); background: #fafaf8; opacity: 0.75; }
+  .symptom-card.unknown  { border-color: var(--border-soft); background: #fafaf8; opacity: 0.8; }
+
+  .symptom-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
+
+  .symptom-num {
+    min-width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; font-size: 11px; font-weight: 500;
+    flex-shrink: 0; margin-top: 2px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text-dim);
+    transition: all 0.15s;
+  }
+
+  .symptom-card.present .symptom-num  { background: var(--accent3); border-color: var(--accent3); color: #fff; }
+  .symptom-card.absent  .symptom-num  { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+
+  .symptom-info { flex: 1; }
+
+  .symptom-title { font-size: 14px; font-weight: 500; color: var(--text); line-height: 1.3; margin-bottom: 4px; }
+  .symptom-question { font-size: 12px; color: var(--text-muted); line-height: 1.55; font-style: italic; }
+
+  /* Presencia */
+  .presence-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .pres-btn {
+    flex: 1;
+    padding: 10px 8px;
+    border: 1px solid var(--border-soft);
+    border-radius: 9px;
+    background: var(--surface);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    font-weight: 400;
+    text-align: center;
+    color: var(--text-muted);
+  }
+
+  .pres-btn:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,0.06); }
+
+  .pres-btn.yes.active  { border-color: var(--accent3); background: rgba(160,88,88,0.08); color: var(--accent3); font-weight: 500; box-shadow: 0 3px 10px rgba(160,88,88,0.12); }
+  .pres-btn.no.active   { border-color: var(--accent2); background: rgba(106,138,120,0.08); color: var(--accent2); font-weight: 500; }
+  .pres-btn.unk.active  { border-color: var(--text-dim); background: rgba(176,160,144,0.08); color: var(--text-muted); }
+
+  /* Severidad */
+  .severity-section {
+    border-top: 1px solid var(--border-soft);
+    padding-top: 12px;
+    margin-top: 4px;
+  }
+
+  .severity-label { font-size: 10px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent3); margin-bottom: 8px; }
+
+  .sev-row { display: flex; gap: 8px; }
+
+  .sev-btn {
+    flex: 1;
+    padding: 10px 8px;
+    border: 1px solid var(--border-soft);
+    border-radius: 9px;
+    background: var(--surface);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Jost', sans-serif;
+    text-align: center;
+    color: var(--text-muted);
+  }
+
+  .sev-btn:hover { transform: translateY(-1px); }
+
+  .sev-num { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 300; line-height: 1; margin-bottom: 4px; }
+  .sev-lbl { font-size: 10px; line-height: 1.3; }
+
+  .sev-btn.s1.active { border-color: #c4a040; background: #fdf8e8; color: #8a6828; box-shadow: 0 2px 8px rgba(196,160,64,0.15); }
+  .sev-btn.s2.active { border-color: #c48040; background: #fdf2e8; color: #8a5020; box-shadow: 0 2px 8px rgba(196,128,64,0.15); }
+  .sev-btn.s3.active { border-color: var(--accent3); background: rgba(160,88,88,0.07); color: #803838; box-shadow: 0 2px 8px rgba(160,88,88,0.15); }
+
+  .sev-btn.s1.active .sev-num { color: #c4a040; }
+  .sev-btn.s2.active .sev-num { color: #c48040; }
+  .sev-btn.s3.active .sev-num { color: var(--accent3); }
+
+  /* ── Botón resultado ── */
+  .btn-result {
+    display: block; width: 100%; margin-top: 24px; padding: 16px;
+    font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    background: var(--accent); border: none; border-radius: 10px;
+    color: #fff; cursor: pointer; transition: all 0.18s ease;
+    box-shadow: 0 3px 14px rgba(154,120,72,0.28);
+  }
+
+  .btn-result:hover { background: #886038; box-shadow: 0 4px 18px rgba(154,120,72,0.38); transform: translateY(-1px); }
+  .btn-result:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ── Resultados ── */
+  .results { animation: fadeSlide 0.4s ease; }
+
+  .summary-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+
+  .summary-card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    padding: 24px 18px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .sum-label { font-size: 9.5px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 8px; }
+  .sum-label.present-lbl { color: var(--accent3); }
+  .sum-label.severity-lbl { color: var(--accent); }
+  .sum-label.max-lbl { color: var(--accent2); }
+
+  .sum-number { font-family: 'Playfair Display', serif; font-size: 56px; font-weight: 300; line-height: 1; margin-bottom: 4px; }
+  .sum-number.present-num  { color: var(--accent3); }
+  .sum-number.severity-num { color: var(--accent); }
+  .sum-number.max-num      { color: var(--accent2); }
+  .sum-sub { font-size: 11px; color: var(--text-dim); }
+
+  /* Breakdown */
+  .breakdown-section {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 24px 26px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .breakdown-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 300; margin-bottom: 18px; color: var(--text-muted); }
+
+  .breakdown-item {
+    display: flex; align-items: center; gap: 12px; padding: 9px 0;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .breakdown-item:last-child { border-bottom: none; }
+
+  .bd-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .bd-dot.present { background: var(--accent3); }
+  .bd-dot.absent  { background: var(--border); }
+  .bd-dot.unknown { background: var(--text-dim); }
+
+  .bd-name { flex: 1; font-size: 12px; color: var(--text-muted); line-height: 1.3; }
+  .bd-name.present { color: var(--text); }
+
+  .bd-pres { min-width: 50px; font-size: 11px; text-align: center; }
+  .bd-pres.yes { color: var(--accent3); font-weight: 500; }
+  .bd-pres.no  { color: var(--accent2); }
+  .bd-pres.unk { color: var(--text-dim); }
+
+  .bd-sev {
+    min-width: 80px;
+    font-size: 10.5px;
+    text-align: right;
+    font-weight: 500;
+  }
+  .bd-sev.s1 { color: #c4a040; }
+  .bd-sev.s2 { color: #c48040; }
+  .bd-sev.s3 { color: var(--accent3); }
+  .bd-sev.na { color: var(--text-dim); }
+
+  /* Interpretation */
+  .interpretation {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 24px 26px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .interpretation h3 { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 300; margin-bottom: 14px; color: var(--text-muted); }
+  .interpretation p  { font-size: 12px; color: var(--text-muted); line-height: 1.75; margin-top: 10px; }
+
+  .interp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+  .interp-item { padding: 13px 14px; background: #faf7f3; border-radius: 8px; border: 1px solid var(--border-soft); }
+  .interp-range { color: var(--text-dim); font-size: 10px; letter-spacing: 0.1em; margin-bottom: 4px; text-transform: uppercase; }
+  .interp-desc  { color: var(--text-muted); font-size: 11.5px; }
+
+  .interp-item.current { border-color: var(--accent); background: rgba(154,120,72,0.06); }
+  .interp-item.current .interp-desc { color: var(--text); font-weight: 400; }
+
+  /* Bottom buttons */
+  .btn-copy {
+    display: block; width: 100%; margin-top: 18px; padding: 15px;
+    font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    background: transparent; border: 1px solid var(--accent);
+    border-radius: 8px; color: var(--accent); cursor: pointer; transition: all 0.18s ease;
+  }
+  .btn-copy:hover { background: rgba(154,120,72,0.07); }
+
+  .btn-restart {
+    display: block; width: 100%; margin-top: 10px; padding: 15px;
+    font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 400;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-muted); cursor: pointer; transition: all 0.18s ease;
+  }
+  .btn-restart:hover { border-color: var(--text-muted); color: var(--text); background: var(--surface); }
+
+  @media (max-width: 600px) {
+    .header h1 { font-size: 28px; }
+    .summary-cards { grid-template-columns: 1fr; }
+    .interp-grid { grid-template-columns: 1fr; }
+    .sev-row { gap: 5px; }
+    .symptom-card { padding: 16px 14px; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+const symptoms = [
+  {
+    id: 2,
+    title: "Delirios",
+    question: "¿Tiene el paciente creencias falsas, como creer que otras personas le están robando o que planean hacerle daño de alguna manera?"
+  },
+  {
+    id: 3,
+    title: "Alucinaciones",
+    question: "¿Tiene el paciente alucinaciones como visiones falsas o voces? ¿Actúa el paciente como si oyera o viera cosas que no están presentes?"
+  },
+  {
+    id: 4,
+    title: "Agitación o agresividad",
+    question: "¿Se resiste el paciente a la ayuda de otros o es difícil de manejar?"
+  },
+  {
+    id: 5,
+    title: "Depresión o disforia",
+    question: "¿Actúa el paciente como si estuviera triste o dice que está deprimido?"
+  },
+  {
+    id: 6,
+    title: "Ansiedad",
+    question: "¿Se molesta el paciente cuando se separa de usted? ¿Muestra otras señales de nerviosismo, como falta de aire, suspiros, incapacidad de relajarse o se siente excesivamente tenso?"
+  },
+  {
+    id: 7,
+    title: "Euforia o exaltación",
+    question: "¿Parece que el paciente se siente demasiado bien o actúa excesivamente alegre?"
+  },
+  {
+    id: 8,
+    title: "Apatía o indiferencia",
+    question: "¿Parece el paciente menos interesado en sus actividades habituales o en las actividades y planes de los demás?"
+  },
+  {
+    id: 9,
+    title: "Pérdida de la inhibición / Desinhibición",
+    question: "¿Parece que el paciente actúa impulsivamente? Por ejemplo, ¿habla el paciente con extraños como si los conociera o dice cosas que podrían herir los sentimientos de los demás?"
+  },
+  {
+    id: 10,
+    title: "Irritabilidad o labilidad",
+    question: "¿Se muestra el paciente irritable o impaciente? ¿Tiene dificultad para lidiar con retrasos o para esperar actividades planeadas?"
+  },
+  {
+    id: 11,
+    title: "Disturbio motor",
+    question: "¿Lleva a cabo el paciente actividades repetitivas, como dar vueltas por la casa, jugar con botones, enrollar hilos o hacer otras cosas repetitivamente?"
+  },
+  {
+    id: 12,
+    title: "Conductas nocturnas",
+    question: "¿Le despierta el paciente durante la noche, se levanta muy temprano por la mañana o toma siestas excesivas durante el día?"
+  },
+  {
+    id: 13,
+    title: "Apetito y alimentación",
+    question: "¿El paciente ha perdido o aumentado de peso o ha tenido algún cambio en la comida que le gusta?"
+  }
+];
+
+// presence: null | 1 (sí) | 0 (no) | 9 (no sabe)
+// severity: null | 1 | 2 | 3 | 9 (solo si presence === 1)
+let presence = new Array(symptoms.length).fill(null);
+let severity = new Array(symptoms.length).fill(null);
+let informante = null;
+let showResults = false;
+
+function allAnswered() {
+  return presence.every(p => p !== null);
+}
+
+function countPresent() {
+  return presence.filter(p => p === 1).length;
+}
+
+function totalSeverity() {
+  return severity.reduce((s, v, i) => {
+    if (presence[i] === 1 && v !== null && v !== 9) return s + v;
+    return s;
+  }, 0);
+}
+
+function sevLabel(s) {
+  if (s === 1) return 'Leve';
+  if (s === 2) return 'Moderado';
+  if (s === 3) return 'Severo';
+  return null;
+}
+
+function render() {
+  const app = document.getElementById('app');
+  if (showResults) { renderResults(app); return; }
+
+  const done = presence.filter(p => p !== null).length;
+  const pct  = (done / symptoms.length) * 100;
+
+  const INFORMANTES = ['Esposo/a', 'Hijo/a', 'Otro'];
+
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">Evaluación conductual · Informante</div>
+      <h1>Inventario Neuropsiquiátrico <em>NPI-Q</em></h1>
+      <p class="header-desc">12 síntomas · Completado por el <strong>informante</strong> (familiar o cuidador), no por el paciente. Indique si cada síntoma ha estado presente en el <strong>último mes</strong> y, si es así, su severidad. © Jeffrey L. Cummings, MD.</p>
+    </div>
+
+    <div class="instruccion">
+      <div class="instruccion-title">Instrucciones para el evaluador</div>
+      <p>Responda basándose en <strong>cambios ocurridos desde que el paciente empezó a experimentar problemas cognitivos o de memoria</strong>. Marque <strong>Sí</strong> solo si el síntoma ha estado presente en el <strong>último mes</strong>. Para cada Sí, registre la severidad:<br>
+      <strong>1 = Leve</strong> (notable pero no significativo) · <strong>2 = Moderado</strong> (significativo pero no dramático) · <strong>3 = Severo</strong> (muy marcado, cambio dramático)</p>
+    </div>
+
+    <div class="informante-card">
+      <div class="informante-title">Informante</div>
+      <div class="informante-opts">
+        ${INFORMANTES.map((inf, i) => `
+          <button class="informante-btn ${informante === i ? 'active' : ''}" onclick="setInformante(${i})">${inf}</button>
+        `).join('')}
+      </div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span class="progress-label">Completado</span>
+        <span class="progress-count">${done} / ${symptoms.length}</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${pct}%"></div>
+      </div>
+    </div>
+
+    ${symptoms.map((sym, i) => {
+      const p = presence[i];
+      const s = severity[i];
+      const cardClass = p === 1 ? 'present' : p === 0 ? 'absent' : p === 9 ? 'unknown' : '';
+
+      return `
+        <div class="symptom-card ${cardClass}">
+          <div class="symptom-header">
+            <span class="symptom-num">${sym.id}</span>
+            <div class="symptom-info">
+              <div class="symptom-title">${sym.title}</div>
+              <div class="symptom-question">${sym.question}</div>
+            </div>
+          </div>
+
+          <div class="presence-row">
+            <button class="pres-btn yes ${p === 1 ? 'active' : ''}" onclick="setPresence(${i}, 1)">✓ Sí</button>
+            <button class="pres-btn no  ${p === 0 ? 'active' : ''}" onclick="setPresence(${i}, 0)">✗ No</button>
+            <button class="pres-btn unk ${p === 9 ? 'active' : ''}" onclick="setPresence(${i}, 9)">? No sabe</button>
+          </div>
+
+          ${p === 1 ? `
+            <div class="severity-section">
+              <div class="severity-label">Severidad</div>
+              <div class="sev-row">
+                <button class="sev-btn s1 ${s === 1 ? 'active' : ''}" onclick="setSeverity(${i}, 1)">
+                  <div class="sev-num">1</div>
+                  <div class="sev-lbl">Leve<br><span style="font-size:9px;opacity:.7">Notable, no significativo</span></div>
+                </button>
+                <button class="sev-btn s2 ${s === 2 ? 'active' : ''}" onclick="setSeverity(${i}, 2)">
+                  <div class="sev-num">2</div>
+                  <div class="sev-lbl">Moderado<br><span style="font-size:9px;opacity:.7">Significativo, no dramático</span></div>
+                </button>
+                <button class="sev-btn s3 ${s === 3 ? 'active' : ''}" onclick="setSeverity(${i}, 3)">
+                  <div class="sev-num">3</div>
+                  <div class="sev-lbl">Severo<br><span style="font-size:9px;opacity:.7">Muy marcado, dramático</span></div>
+                </button>
+                <button class="sev-btn unk ${s === 9 ? 'active' : ''}" onclick="setSeverity(${i}, 9)"
+                        style="max-width:70px">
+                  <div class="sev-num" style="font-size:14px">?</div>
+                  <div class="sev-lbl">No sabe</div>
+                </button>
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('')}
+
+    <button class="btn-result" onclick="verResultado()" ${!allAnswered() ? 'disabled' : ''}>
+      ${!allAnswered() ? `Faltan ${symptoms.length - done} síntomas` : 'Ver resultado →'}
+    </button>
+  `;
+}
+
+function renderResults(app) {
+  const nPresent  = countPresent();
+  const totalSev  = totalSeverity();
+  const maxSev    = nPresent * 3;
+
+  // Determinar nivel clínico general
+  function getNivel() {
+    if (nPresent === 0) return { label: "Sin síntomas neuropsiquiátricos", cls: "" };
+    if (totalSev <= 4)  return { label: "Carga conductual leve",    cls: "current-leve" };
+    if (totalSev <= 12) return { label: "Carga conductual moderada", cls: "current-mod" };
+    return                    { label: "Carga conductual severa",   cls: "current-sev" };
+  }
+
+  const nivel = getNivel();
+
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">Resultado de la evaluación</div>
+      <h1>Inventario Neuropsiquiátrico <em>NPI-Q</em></h1>
+    </div>
+
+    <div class="results">
+
+      <div class="summary-cards">
+        <div class="summary-card">
+          <div class="sum-label present-lbl">Síntomas presentes</div>
+          <div class="sum-number present-num">${nPresent}</div>
+          <div class="sum-sub">de ${symptoms.length} evaluados</div>
+        </div>
+        <div class="summary-card">
+          <div class="sum-label severity-lbl">Puntaje severidad</div>
+          <div class="sum-number severity-num">${totalSev}</div>
+          <div class="sum-sub">de ${maxSev > 0 ? maxSev : symptoms.length * 3} posibles</div>
+        </div>
+        <div class="summary-card">
+          <div class="sum-label max-lbl">Puntaje máximo posible</div>
+          <div class="sum-number max-num">${symptoms.length * 3}</div>
+          <div class="sum-sub">12 síntomas × 3</div>
+        </div>
+      </div>
+
+      <div class="breakdown-section">
+        <div class="breakdown-title">Resultado por síntoma</div>
+        ${symptoms.map((sym, i) => {
+          const p = presence[i];
+          const s = severity[i];
+          const dotCls = p === 1 ? 'present' : p === 9 ? 'unknown' : 'absent';
+          const presCls = p === 1 ? 'yes' : p === 9 ? 'unk' : 'no';
+          const presLabel = p === 1 ? 'Sí' : p === 9 ? 'No sabe' : 'No';
+          const sevStr = (p === 1 && s && s !== 9) ? sevLabel(s) : null;
+          const sevCls = s === 1 ? 's1' : s === 2 ? 's2' : s === 3 ? 's3' : 'na';
+
+          return `
+            <div class="breakdown-item">
+              <div class="bd-dot ${dotCls}"></div>
+              <div class="bd-name ${p === 1 ? 'present' : ''}">${sym.id}. ${sym.title}</div>
+              <div class="bd-pres ${presCls}">${presLabel}</div>
+              <div class="bd-sev ${sevCls}">${sevStr ? sevStr + ' (' + s + ')' : p === 1 ? '—' : ''}</div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+
+      <div class="interpretation">
+        <h3>Interpretación clínica</h3>
+        <div class="interp-grid">
+          <div class="interp-item ${totalSev <= 4 && nPresent > 0 ? 'current' : ''}">
+            <div class="interp-range">1–4 pts · Leve</div>
+            <div class="interp-desc">Síntomas presentes pero con impacto leve en el cuidado.</div>
+          </div>
+          <div class="interp-item ${totalSev >= 5 && totalSev <= 12 ? 'current' : ''}">
+            <div class="interp-range">5–12 pts · Moderado</div>
+            <div class="interp-desc">Carga conductual significativa. Considerar intervención.</div>
+          </div>
+          <div class="interp-item ${totalSev >= 13 ? 'current' : ''}">
+            <div class="interp-range">≥ 13 pts · Severo</div>
+            <div class="interp-desc">Alta carga conductual. Impacto importante en cuidado y calidad de vida.</div>
+          </div>
+        </div>
+        <p>Nota: El NPI-Q no tiene puntos de corte diagnósticos oficialmente establecidos. El puntaje de severidad (suma de ítems presentes) orienta la carga conductual global. Cada síntoma debe evaluarse clínicamente de forma individual. © Jeffrey L. Cummings, MD. Formulario B5 NACC UDS v3.1.</p>
+      </div>
+
+      <button class="btn-copy" id="btnCopy" onclick="copyToClipboard()">⎘ Copiar para ficha clínica</button>
+      <button class="btn-restart" onclick="restart()">↩ Nueva evaluación</button>
+    </div>
+  `;
+}
+
+function buildPlainText() {
+  const nPresent = countPresent();
+  const totalSev = totalSeverity();
+  const date = new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric' });
+  const informantes = ['Esposo/a', 'Hijo/a', 'Otro'];
+  const presLabels = { 1: 'Si', 0: 'No', 9: 'No sabe' };
+  const sevLabels  = { 1: 'Leve (1)', 2: 'Moderado (2)', 3: 'Severo (3)', 9: 'No sabe' };
+
+  const lines = [];
+  lines.push('INVENTARIO NEUROPSIQUIATRICO (NPI-Q)');
+  lines.push('Fecha de aplicacion: ' + date);
+  lines.push('Informante: ' + (informante !== null ? informantes[informante] : 'No especificado'));
+  lines.push('Periodo de referencia: ultimo mes');
+  lines.push('Respondido por: informante (no el paciente)');
+  lines.push('');
+  lines.push('RESULTADOS POR SINTOMA:');
+  lines.push('(Presencia: Si/No/No sabe | Severidad si Si: 1=Leve, 2=Moderado, 3=Severo)');
+  lines.push('');
+  symptoms.forEach((sym, i) => {
+    const p = presence[i];
+    const s = severity[i];
+    lines.push(sym.id + '. ' + sym.title);
+    lines.push('   Presencia: ' + (presLabels[p] || '—') +
+      (p === 1 ? ' | Severidad: ' + (s !== null ? sevLabels[s] : '—') : ''));
+  });
+  lines.push('');
+  lines.push('SINTOMAS PRESENTES: ' + nPresent + ' / ' + symptoms.length);
+  lines.push('PUNTAJE TOTAL SEVERIDAD: ' + totalSev + ' / ' + (symptoms.length * 3));
+  lines.push('');
+  lines.push('Sintomas presentes con severidad:');
+  symptoms.forEach((sym, i) => {
+    if (presence[i] === 1) {
+      const s = severity[i];
+      lines.push('  - ' + sym.title + ': ' + (s !== null && s !== 9 ? sevLabels[s] : '—'));
+    }
+  });
+  lines.push('');
+  lines.push('Referencia: Cummings JL. The Neuropsychiatric Inventory. Neurology. 1994;44:2308-2314.');
+  lines.push('NACC UDS Formulario B5, v3.1. © Jeffrey L. Cummings, MD.');
+  return lines.join('\n');
+}
+
+async function copyToClipboard() {
+  const text = buildPlainText();
+  const btn  = document.getElementById('btnCopy');
+  try {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = '✓ Copiado';
+    btn.style.borderColor = '#6a8a78';
+    btn.style.color = '#6a8a78';
+    setTimeout(() => { btn.textContent = '⎘ Copiar para ficha clínica'; btn.style.borderColor = ''; btn.style.color = ''; }, 2500);
+  } catch(e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => { btn.textContent = '⎘ Copiar para ficha clínica'; }, 2500);
+  }
+}
+
+function setInformante(i) { informante = i; render(); }
+function setPresence(i, v) {
+  presence[i] = v;
+  if (v !== 1) severity[i] = null;
+  render();
+}
+function setSeverity(i, v) { severity[i] = v; render(); }
+function verResultado()    { if (!allAnswered()) return; showResults = true; render(); }
+function restart()         { presence = new Array(symptoms.length).fill(null); severity = new Array(symptoms.length).fill(null); informante = null; showResults = false; render(); }
+
+render();
+</script>
+</body>
+</html>

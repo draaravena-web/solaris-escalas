@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KMDRS — Escala de Depresión Mixta de Koukopoulos</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0edf5;
+    --surface: #e6e1f0;
+    --card: #ffffff;
+    --border: #d5ceea;
+    --border-soft: #dfd9ee;
+    --accent: #7058a8;       /* violeta profundo — único para KMDRS */
+    --accent2: #c4785a;      /* terracota cálida */
+    --accent-exc: #7058a8;   /* excitación psicomotora */
+    --accent-ang: #b05878;   /* ira/tensión/impulsividad */
+    --text: #2a2535;
+    --text-muted: #6a6278;
+    --text-dim: #aca5bc;
+    --selected-bg: #f0ecf8;
+    --selected-border: #7058a8;
+    --shadow: 0 2px 16px rgba(50,35,80,0.08);
+    --shadow-sm: 0 1px 6px rgba(50,35,80,0.05);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Jost', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.7;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 45% at 8% 10%,  rgba(112,88,168,0.09) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 55% at 90% 85%, rgba(196,120,90,0.07)  0%, transparent 55%),
+      radial-gradient(ellipse 35% 40% at 72% 6%,  rgba(176,88,120,0.06)  0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ── Header ── */
+  .header {
+    margin-bottom: 44px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-label {
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px;
+    font-weight: 300;
+    color: var(--text);
+    line-height: 1.15;
+  }
+
+  .header h1 em { font-style: italic; color: var(--accent2); }
+
+  .header-desc {
+    margin-top: 12px;
+    color: var(--text-muted);
+    font-size: 12px;
+    max-width: 620px;
+    line-height: 1.65;
+  }
+
+  /* ── Instrucción ── */
+  .instruccion {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0;
+    padding: 18px 22px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .instruccion-title {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .instruccion p { color: var(--text-muted); font-size: 12.5px; line-height: 1.75; }
+
+  /* ── Factores ── */
+  .factors-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .factor-card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 14px 18px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .factor-label {
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+
+  .factor-label.exc { color: var(--accent-exc); }
+  .factor-label.ang { color: var(--accent-ang); }
+
+  .factor-items { font-size: 11px; color: var(--text-dim); line-height: 1.5; }
+
+  /* ── Progreso ── */
+  .progress-wrap { margin-bottom: 24px; }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .progress-label { color: var(--text-dim); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+  .progress-count { color: var(--accent); font-size: 11px; font-weight: 500; }
+  .progress-bar   { height: 3px; background: var(--border-soft); border-radius: 3px; overflow: hidden; }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-exc), var(--accent-ang));
+    border-radius: 3px;
+    transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* ── Cabecera de grupo ── */
+  .group-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 28px 0 14px;
+  }
+
+  .group-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 16px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    border: 1px solid;
+    white-space: nowrap;
+  }
+
+  .pill-exc { color: var(--accent-exc); border-color: var(--accent-exc); background: rgba(112,88,168,0.07); }
+  .pill-ang { color: var(--accent-ang); border-color: var(--accent-ang); background: rgba(176,88,120,0.07); }
+  .group-line { flex: 1; height: 1px; background: var(--border-soft); }
+
+  /* ── Tarjeta de ítem ── */
+  .item-card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 22px 24px;
+    margin-bottom: 12px;
+    box-shadow: var(--shadow-sm);
+    transition: border-color 0.15s;
+    animation: fadeSlide 0.25s ease;
+  }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .item-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 6px;
+  }
+
+  .item-num {
+    min-width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    flex-shrink: 0;
+    margin-top: 2px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-dim);
+    transition: all 0.15s;
+  }
+
+  .item-card.answered-exc .item-num { background: var(--accent-exc); border-color: var(--accent-exc); color: #fff; }
+  .item-card.answered-ang .item-num { background: var(--accent-ang); border-color: var(--accent-ang); color: #fff; }
+
+  .item-title {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1.3;
+    padding-top: 2px;
+  }
+
+  .item-guide {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    margin: 8px 0 16px 40px;
+    font-style: italic;
+    padding: 10px 14px;
+    background: rgba(112,88,168,0.04);
+    border-left: 2px solid var(--border-soft);
+    border-radius: 0 6px 6px 0;
+  }
+
+  /* Opciones de respuesta */
+  .options-grid {
+    display: grid;
+    gap: 7px;
+    padding-left: 40px;
+  }
+
+  /* Para ítems con 4 opciones (0-3) */
+  .options-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  /* Para ítems con escala 0,2,4,6 (4 opciones) */
+  .options-grid.cols-4-wide { grid-template-columns: repeat(4, 1fr); }
+
+  .opt-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 10px;
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    background: #faf8fd;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: 'Jost', sans-serif;
+    text-align: left;
+  }
+
+  .opt-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(112,88,168,0.12);
+  }
+
+  .opt-card.active-exc {
+    border-color: var(--accent-exc);
+    background: var(--selected-bg);
+    box-shadow: 0 3px 12px rgba(112,88,168,0.18);
+  }
+
+  .opt-card.active-ang {
+    border-color: var(--accent-ang);
+    background: #fdf0f5;
+    box-shadow: 0 3px 12px rgba(176,88,120,0.15);
+  }
+
+  .opt-score-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-size: 13px;
+    font-weight: 400;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .opt-card.active-exc .opt-score-badge { background: var(--accent-exc); border-color: var(--accent-exc); color: #fff; }
+  .opt-card.active-ang .opt-score-badge { background: var(--accent-ang); border-color: var(--accent-ang); color: #fff; }
+
+  .opt-desc {
+    font-size: 10.5px;
+    color: var(--text-dim);
+    line-height: 1.4;
+    transition: color 0.15s;
+  }
+
+  .opt-card.active-exc .opt-desc { color: var(--text-muted); }
+  .opt-card.active-ang .opt-desc { color: var(--text-muted); }
+
+  /* ── Botón resultado ── */
+  .btn-result {
+    display: block;
+    width: 100%;
+    margin-top: 28px;
+    padding: 16px;
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    box-shadow: 0 3px 14px rgba(112,88,168,0.3);
+  }
+
+  .btn-result:hover { background: #5e489a; box-shadow: 0 4px 18px rgba(112,88,168,0.4); transform: translateY(-1px); }
+  .btn-result:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ── Resultados ── */
+  .results { animation: fadeSlide 0.4s ease; }
+
+  .score-display {
+    text-align: center;
+    padding: 52px 36px;
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .score-display::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 55% at 50% 110%, rgba(112,88,168,0.09) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  .score-label { color: var(--text-dim); font-size: 10px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; margin-bottom: 16px; }
+
+  .score-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 96px;
+    font-weight: 300;
+    line-height: 1;
+    margin-bottom: 8px;
+    color: var(--accent);
+  }
+
+  .score-max { color: var(--text-dim); font-size: 12px; margin-bottom: 22px; }
+
+  .score-severity {
+    display: inline-block;
+    padding: 9px 28px;
+    border-radius: 24px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    border: 1px solid;
+  }
+
+  .sev-none     { color: #5e8f6e; border-color: #a8c9b3; background: #eef5f1; }
+  .sev-possible { color: #7a8f5e; border-color: #b8c9a3; background: #f2f5ec; }
+  .sev-mild     { color: #9a7c3f; border-color: #d4b87a; background: #faf5ea; }
+  .sev-moderate { color: #a04060; border-color: #d090a8; background: #faeef3; }
+  .sev-severe   { color: #6838a8; border-color: #b898e0; background: #f3eefa; }
+
+  /* Subtotales por factor */
+  .subtotals {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .subtotal-card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    padding: 22px 20px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .subtotal-lbl { font-size: 10px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 8px; }
+  .subtotal-lbl.exc { color: var(--accent-exc); }
+  .subtotal-lbl.ang { color: var(--accent-ang); }
+
+  .subtotal-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 52px;
+    font-weight: 300;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .subtotal-num.exc { color: var(--accent-exc); }
+  .subtotal-num.ang { color: var(--accent-ang); }
+  .subtotal-max { font-size: 11px; color: var(--text-dim); }
+
+  /* Breakdown */
+  .breakdown-section {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 26px 28px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .breakdown-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 300;
+    margin-bottom: 20px;
+    color: var(--text-muted);
+  }
+
+  .breakdown-group-lbl {
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 6px 0;
+    margin: 8px 0 4px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .breakdown-group-lbl.exc { color: var(--accent-exc); }
+  .breakdown-group-lbl.ang { color: var(--accent-ang); }
+
+  .breakdown-item { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border-soft); }
+  .breakdown-item:last-child { border-bottom: none; }
+  .breakdown-name { flex: 1; color: var(--text-muted); font-size: 11.5px; line-height: 1.35; }
+  .breakdown-bar-wrap { width: 90px; height: 5px; background: var(--border-soft); border-radius: 3px; overflow: hidden; }
+  .breakdown-bar { height: 100%; border-radius: 3px; }
+  .breakdown-bar.exc { background: linear-gradient(90deg, var(--accent-exc), #9878d0); }
+  .breakdown-bar.ang { background: linear-gradient(90deg, var(--accent-ang), #d090a8); }
+  .breakdown-val { width: 36px; text-align: right; font-size: 12px; font-weight: 500; }
+  .breakdown-val.exc { color: var(--accent-exc); }
+  .breakdown-val.ang { color: var(--accent-ang); }
+
+  /* Interpretation */
+  .interpretation {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 26px 28px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .interpretation h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 300;
+    margin-bottom: 16px;
+    color: var(--text-muted);
+  }
+
+  .interp-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+
+  .interp-item { padding: 13px 12px; background: #faf8fd; border-radius: 8px; border: 1px solid var(--border-soft); }
+  .interp-range { color: var(--text-dim); font-size: 9.5px; letter-spacing: 0.1em; margin-bottom: 4px; text-transform: uppercase; }
+  .interp-desc  { color: var(--text-muted); font-size: 11.5px; margin-bottom: 3px; }
+
+  .interp-item.current { border-color: var(--accent); background: var(--selected-bg); }
+  .interp-item.current .interp-desc { color: var(--text); font-weight: 400; }
+
+  /* Bottom buttons */
+  .btn-copy {
+    display: block; width: 100%; margin-top: 18px; padding: 15px;
+    font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    background: transparent; border: 1px solid var(--accent);
+    border-radius: 8px; color: var(--accent); cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .btn-copy:hover { background: var(--selected-bg); }
+
+  .btn-restart {
+    display: block; width: 100%; margin-top: 10px; padding: 15px;
+    font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 400;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-muted); cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .btn-restart:hover { border-color: var(--text-muted); color: var(--text); background: var(--surface); }
+
+  @media (max-width: 640px) {
+    .header h1 { font-size: 26px; }
+    .factors-row { grid-template-columns: 1fr; }
+    .options-grid.cols-4, .options-grid.cols-4-wide { grid-template-columns: repeat(2, 1fr); }
+    .subtotals { grid-template-columns: 1fr; }
+    .interp-grid { grid-template-columns: repeat(2, 1fr); }
+    .score-number { font-size: 72px; }
+    .item-card { padding: 16px 14px; }
+    .item-guide { margin-left: 0; }
+    .options-grid { padding-left: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+// Factor: 'exc' = excitación psicomotora, 'ang' = ira/tensión/impulsividad
+// maxScore: puntaje máximo del ítem
+// options: [{score, desc}]
+const items = [
+  // ── FACTOR EXCITACIÓN PSICOMOTORA ──
+  {
+    id: 1,
+    title: "Expresión de sufrimiento",
+    guide: "Puntúe tanto la extensión de los sentimientos internos como su expresión (experiencia y manifestación observable). Determine signos de sufrimiento por la conducta durante la entrevista, especialmente prosodia y gesticulación. Lo referido también se considera.",
+    factor: "exc",
+    maxScore: 3,
+    options: [
+      { score: 0, desc: "Expresiones lacónicas de sufrimiento depresivo" },
+      { score: 1, desc: "Descripciones animadas y prolongadas del sufrimiento" },
+      { score: 2, desc: "Expresiones dramáticas de sufrimiento y desesperación" },
+      { score: 3, desc: "Conversación interrumpida por períodos de llanto" }
+    ]
+  },
+  {
+    id: 2,
+    title: "Expresión facial vivaz",
+    guide: "Puntúe solo en base al comportamiento observado durante la entrevista.",
+    factor: "exc",
+    maxScore: 3,
+    options: [
+      { score: 0, desc: "Ausente" },
+      { score: 1, desc: "Presente en un grado mínimo" },
+      { score: 2, desc: "Presente, pero de intensidad leve" },
+      { score: 3, desc: "Presente y de una intensidad más que leve" }
+    ]
+  },
+  {
+    id: 3,
+    title: "Cantidad de habla",
+    guide: "Puntúe en base a la cantidad de producción verbal, independientemente del contenido. Lo referido también se considera.",
+    factor: "exc",
+    maxScore: 3,
+    options: [
+      { score: 0, desc: "Retardo en el habla" },
+      { score: 1, desc: "Habla sin complicaciones" },
+      { score: 2, desc: "Muy hablador/a, pero la conversación no es tensionada" },
+      { score: 3, desc: "Tan hablador/a que la conversación es tensionada" }
+    ]
+  },
+  {
+    id: 4,
+    title: "Labilidad emocional",
+    guide: "Evalúa los cambios de ánimo de ansiedad a tristeza, a desesperación, a ira, a euforia. Puntúe según observaciones durante la entrevista. Reportes cuidadosos y confiables también pueden ser considerados.",
+    factor: "exc",
+    maxScore: 3,
+    options: [
+      { score: 0, desc: "Ausente" },
+      { score: 1, desc: "Cambios de ánimo limitados a un rango disfórico (tristeza a ansiedad, a ira)" },
+      { score: 2, desc: "Cambios dentro de un rango disfórico, las emociones son más intensas (desesperación, rabia)" },
+      { score: 3, desc: "Cambios de un ánimo disfórico a euforia" }
+    ]
+  },
+  {
+    id: 5,
+    title: "Actividad motora / Inquietud",
+    guide: "Asegúrese de que la hiperactividad/inquietud motora es visible (o de hecho ocurrió) y no es solo un sentimiento subjetivo. ¿Ha estado tan nervioso/a o intranquilo/a que no ha podido quedarse quieto?",
+    factor: "exc",
+    maxScore: 3,
+    options: [
+      { score: 0, desc: "Nivel normal de psicomotricidad. No hay signos de retardo." },
+      { score: 1, desc: "Tenue aumento de movimientos corporales; inquieto pero capaz de sentarse calladamente." },
+      { score: 2, desc: "Incapaz de sentarse tranquilo en la silla." },
+      { score: 3, desc: "Se pasea cualquier cantidad." }
+    ]
+  },
+  // ── FACTOR IRA / TENSIÓN / IMPULSIVIDAD ──
+  {
+    id: 6,
+    title: "Sentimiento subjetivo de irritabilidad e ira inmotivada",
+    guide: "Síntoma de importancia cardinal. Puntúe solo los sentimientos de irritación o ira que son usualmente reconocidos por los pacientes como inmotivados. ¿Qué tan molesto, enojado o resentido se ha sentido, lo demuestre o no?",
+    factor: "ang",
+    maxScore: 3,
+    options: [
+      { score: 0, desc: "Ausente" },
+      { score: 1, desc: "Quejas de irritabilidad por motivos menores" },
+      { score: 2, desc: "Quejas de irritabilidad por motivos menores (más frecuentes)" },
+      { score: 3, desc: "Se siente como rompiendo cosas o actuando contra sí mismo u otros" }
+    ]
+  },
+  {
+    id: 7,
+    title: "Expresión abierta de irritabilidad e ira",
+    guide: "Puntúe las expresiones abiertas de irritabilidad, molestia e ira, incluyendo ser discutidor, gritos, perder los estribos, tirar cosas y ser agresivo/a. No incluya meros sentimientos subjetivos. Los pacientes no suelen referir comportamientos agresivos; los familiares usualmente los refieren.",
+    factor: "ang",
+    maxScore: 3,
+    options: [
+      { score: 0, desc: "Ausente" },
+      { score: 1, desc: "Rápido para expresar molestia, impaciencia, agresión verbal ocasional" },
+      { score: 2, desc: "Violencia ocasional contra cosas" },
+      { score: 3, desc: "Violencia ocasional contra sí mismo u otros" }
+    ]
+  },
+  {
+    id: 8,
+    title: "Pensamiento tumultoso y/o acelerado",
+    guide: "Síntoma de importancia cardinal. Registre reportes espontáneos antes de preguntar directamente. ¿Ha tenido más pensamientos de lo habitual, o más de los que puede manejar? ¿Han interferido con que pueda conciliar el sueño? ¿Se han acelerado sus pensamientos en su mente?",
+    factor: "ang",
+    maxScore: 3,
+    options: [
+      { score: 0, desc: "Ausente" },
+      { score: 1, desc: "Rumiaciones depresivas o dolorosas" },
+      { score: 2, desc: "Pensamientos o memorias tumultuosas, algunas pueden no ser dolorosas. Pueden resultar en insomnio de conciliación." },
+      { score: 3, desc: "Melodías musicales persistentes en la cabeza" }
+    ]
+  },
+  {
+    id: 9,
+    title: "Tensión interna",
+    guide: "Síntoma de importancia cardinal. Registre reportes espontáneos antes de preguntar directamente. Sensación particular y angustiante de tensión nerviosa acompañada de sentimiento de bloqueo en actividades mentales. ¿Se ha sentido al límite, exitado (exaltado) o tensionado? ¿Esta tensión le impide hacer cosas o le impide pensar?",
+    factor: "ang",
+    maxScore: 3,
+    options: [
+      { score: 0, desc: "Ausente" },
+      { score: 1, desc: "Este estado es referido solo ante el interrogatorio" },
+      { score: 2, desc: "Este sentimiento es referido espontáneamente como una parte molesta de su condición" },
+      { score: 3, desc: "El paciente refiere que es atormentado por un sentimiento de tensión y bloqueo de los pensamientos, sensaciones y emociones" }
+    ]
+  },
+  {
+    id: 10,
+    title: "Tensión muscular",
+    guide: "Sensación desagradable de tensión muscular sin la habilidad para relajarse, no relacionada con un esfuerzo muscular voluntario específico. El ítem también se puntúa en base a observaciones durante la entrevista. ¿Ha tenido dificultad en relajar sus músculos? ¿Siente tensión muscular? ¿Ha sido capaz de relajarse?",
+    factor: "ang",
+    maxScore: 3,
+    options: [
+      { score: 0, desc: "Ausente" },
+      { score: 1, desc: "Tensión muscular leve con alguna habilidad de relajarse" },
+      { score: 2, desc: "Clara experiencia de tensión muscular sin capacidad de relajarse, o tensión visible" },
+      { score: 3, desc: "Temblor visible. El/la paciente se queja de dolor muscular." }
+    ]
+  },
+  {
+    id: 11,
+    title: "Insomnio inicial o medio",
+    guide: "Dificultades para quedarse dormido/a frecuentemente se asocian con pensamiento tumultuoso o acelerado. No deben tomarse en cuenta los despertares por pocos minutos y luego volver a dormirse. Solo los despertares con agitación y/o dificultades en volver a dormir deben ser puntuados.",
+    factor: "ang",
+    maxScore: 3,
+    options: [
+      { score: 0, desc: "Ausente" },
+      { score: 1, desc: "Se queja de dificultades para quedarse dormido/a de no más de una hora" },
+      { score: 2, desc: "Se queja de dificultades para quedarse dormido/a de más de 1 hora y/o dos o más despertares durante la noche" },
+      { score: 3, desc: "Prácticamente no duerme debido a la dificultad para quedarse dormido/a, y a varios despertares nocturnos" }
+    ]
+  },
+  {
+    id: 12,
+    title: "Impulsividad suicida",
+    guide: "Este ítem considera principalmente las características impulsivas de la ideación o los intentos suicidas. Pensamientos suicidas no impulsivos deben ser puntuados cero. ¿Ha tenido pensamientos de matarse o dañarse a sí mismo/a? ¿Fueron estos pensamientos impulsivos, o vinieron abruptamente? ¿Frecuentes en momentos de ira? ¿Actualmente ha hecho algo?",
+    factor: "ang",
+    maxScore: 3,
+    options: [
+      { score: 0, desc: "Ausente" },
+      { score: 1, desc: "Pensamientos suicidas presentes, y cuestionablemente impulsivos" },
+      { score: 2, desc: "Pensamientos suicidas impulsivos definitivamente presentes" },
+      { score: 3, desc: "Intentos suicidas impulsivos (como tratar de saltar fuera de un auto)" }
+    ]
+  },
+  {
+    id: 13,
+    title: "Sexualidad",
+    guide: "Este ítem considera el grado de actividad del impulso sexual, independientemente de su consumación. El paciente rara vez reporta actividad sexual mientras está deprimido. Así, la fuente más útil de información será la entrevista con la pareja del/la paciente. ¿Ha notado por momentos un aumento del deseo sexual?",
+    factor: "exc",
+    maxScore: 3,
+    options: [
+      { score: 0, desc: "Actividad sexual reducida" },
+      { score: 1, desc: "Actividad sexual normal o casi normal" },
+      { score: 2, desc: "Hipersexualidad ocasional" },
+      { score: 3, desc: "Hipersexualidad frecuente" }
+    ]
+  }
+];
+
+// Índices por factor (0-based)
+const EXC_IDX = items.map((it, i) => it.factor === 'exc' ? i : -1).filter(i => i >= 0);
+const ANG_IDX = items.map((it, i) => it.factor === 'ang' ? i : -1).filter(i => i >= 0);
+
+// Puntuación máxima por factor
+const MAX_EXC = EXC_IDX.reduce((s, i) => s + items[i].maxScore, 0);
+const MAX_ANG = ANG_IDX.reduce((s, i) => s + items[i].maxScore, 0);
+const MAX_TOT = MAX_EXC + MAX_ANG;
+
+const SEVERITY = [
+  { min: 0,  max: 4,  label: "Sin depresión mixta",     cls: "sev-none",     shortLabel: "Ninguna" },
+  { min: 5,  max: 9,  label: "Posible depresión mixta",  cls: "sev-possible", shortLabel: "Posible" },
+  { min: 10, max: 15, label: "Depresión mixta leve",     cls: "sev-mild",     shortLabel: "Leve" },
+  { min: 16, max: 20, label: "Depresión mixta moderada", cls: "sev-moderate", shortLabel: "Moderada" },
+  { min: 21, max: 99, label: "Depresión mixta severa",   cls: "sev-severe",   shortLabel: "Severa" }
+];
+
+let answers     = new Array(items.length).fill(null);
+let showResults = false;
+
+function getSeverity(score) {
+  return SEVERITY.find(s => score >= s.min && score <= s.max) || SEVERITY[SEVERITY.length - 1];
+}
+
+function answered() { return answers.filter(a => a !== null).length; }
+
+function totalScore() { return answers.reduce((s, a) => s + (a || 0), 0); }
+function factorScore(indices) { return indices.reduce((s, i) => s + (answers[i] || 0), 0); }
+
+function render() {
+  const app = document.getElementById('app');
+  if (showResults) { renderResults(app); return; }
+
+  const done = answered();
+  const pct  = (done / items.length) * 100;
+
+  let itemsHTML = '';
+  let lastFactor = null;
+
+  items.forEach((item, i) => {
+    if (item.factor !== lastFactor) {
+      if (item.factor === 'exc') {
+        itemsHTML += `
+          <div class="group-header ${i > 0 ? 'style="margin-top:32px"' : ''}">
+            <span class="group-pill pill-exc">Factor Excitación Psicomotora · ítems 1–5, 13</span>
+            <div class="group-line"></div>
+          </div>`;
+      } else {
+        itemsHTML += `
+          <div class="group-header" style="margin-top:32px">
+            <span class="group-pill pill-ang">Factor Ira / Tensión / Impulsividad · ítems 6–12</span>
+            <div class="group-line"></div>
+          </div>`;
+      }
+      lastFactor = item.factor;
+    }
+
+    const sel = answers[i];
+    const activeClass = sel !== null ? (item.factor === 'exc' ? 'answered-exc' : 'answered-ang') : '';
+
+    itemsHTML += `
+      <div class="item-card ${activeClass}">
+        <div class="item-header">
+          <span class="item-num">${item.id}</span>
+          <span class="item-title">${item.title}</span>
+        </div>
+        <div class="item-guide">${item.guide}</div>
+        <div class="options-grid cols-4">
+          ${item.options.map(opt => `
+            <button class="opt-card ${sel === opt.score ? (item.factor === 'exc' ? 'active-exc' : 'active-ang') : ''}"
+                    onclick="select(${i}, ${opt.score})">
+              <span class="opt-score-badge">${opt.score}</span>
+              <span class="opt-desc">${opt.desc}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  });
+
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">Evaluación psiquiátrica · Heteroadministrada</div>
+      <h1>Escala de Depresión Mixta de <em>Koukopoulos</em></h1>
+      <p class="header-desc">KMDRS · 13 ítems · Evalúa síntomas de naturaleza excitatorias/mixtas en individuos con Episodio Depresivo Mayor. Período de referencia: <strong>semana previa a la entrevista</strong>. Sani et al., J Affect Disord. 2018;232:9-16.</p>
+    </div>
+
+    <div class="instruccion">
+      <div class="instruccion-title">Instrucciones para el profesional</div>
+      <p>Esta escala fue desarrollada para evaluar la presencia y severidad de síntomas de naturaleza mixta en individuos diagnosticados con un Episodio Depresivo Mayor (EDM). Revisar registros del caso antes de entrevistar al paciente. Los <strong>primeros 5 ítems</strong> deben puntuarse principalmente en base a observaciones durante las entrevistas diagnósticas. <strong>Nota:</strong> Los pacientes deprimidos tienden a ocultar el comportamiento agresivo e hipersexual — es útil conversar con los familiares por separado.</p>
+    </div>
+
+    <div class="factors-row">
+      <div class="factor-card">
+        <div class="factor-label exc">Factor 1 — Excitación Psicomotora</div>
+        <div class="factor-items">Ítems 1, 2, 3, 4, 5 y 13 · 80% de la varianza total</div>
+      </div>
+      <div class="factor-card">
+        <div class="factor-label ang">Factor 2 — Ira / Tensión / Impulsividad</div>
+        <div class="factor-items">Ítems 6, 7, 8, 9, 10, 11 y 12 · 80% de la varianza total</div>
+      </div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span class="progress-label">Completado</span>
+        <span class="progress-count">${done} / ${items.length}</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${pct}%"></div>
+      </div>
+    </div>
+
+    ${itemsHTML}
+
+    <button class="btn-result" onclick="verResultado()" ${done < items.length ? 'disabled' : ''}>
+      ${done < items.length ? `Faltan ${items.length - done} ítems` : 'Ver resultado →'}
+    </button>
+  `;
+}
+
+function renderResults(app) {
+  const total = totalScore();
+  const fExc  = factorScore(EXC_IDX);
+  const fAng  = factorScore(ANG_IDX);
+  const sev   = getSeverity(total);
+
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">Resultado de la evaluación</div>
+      <h1>Escala de Depresión Mixta de <em>Koukopoulos</em></h1>
+    </div>
+
+    <div class="results">
+
+      <div class="score-display">
+        <div class="score-label">Puntuación total KMDRS</div>
+        <div class="score-number">${total}</div>
+        <div class="score-max">de ${MAX_TOT} puntos posibles</div>
+        <span class="score-severity ${sev.cls}">${sev.label}</span>
+      </div>
+
+      <div class="subtotals">
+        <div class="subtotal-card">
+          <div class="subtotal-lbl exc">Factor Excitación Psicomotora</div>
+          <div class="subtotal-num exc">${fExc}</div>
+          <div class="subtotal-max">de ${MAX_EXC} pts · ítems 1–5, 13</div>
+        </div>
+        <div class="subtotal-card">
+          <div class="subtotal-lbl ang">Factor Ira / Tensión / Impulsividad</div>
+          <div class="subtotal-num ang">${fAng}</div>
+          <div class="subtotal-max">de ${MAX_ANG} pts · ítems 6–12</div>
+        </div>
+      </div>
+
+      <div class="breakdown-section">
+        <div class="breakdown-title">Desglose por ítem</div>
+
+        <div class="breakdown-group-lbl exc">Factor Excitación Psicomotora</div>
+        ${EXC_IDX.map(i => {
+          const v = answers[i] || 0;
+          return `
+            <div class="breakdown-item">
+              <div class="breakdown-name">${items[i].id}. ${items[i].title}</div>
+              <div class="breakdown-bar-wrap"><div class="breakdown-bar exc" style="width:${(v/items[i].maxScore)*100}%"></div></div>
+              <div class="breakdown-val exc">${v}/${items[i].maxScore}</div>
+            </div>`;
+        }).join('')}
+
+        <div class="breakdown-group-lbl ang" style="margin-top:12px">Factor Ira / Tensión / Impulsividad</div>
+        ${ANG_IDX.map(i => {
+          const v = answers[i] || 0;
+          return `
+            <div class="breakdown-item">
+              <div class="breakdown-name">${items[i].id}. ${items[i].title}</div>
+              <div class="breakdown-bar-wrap"><div class="breakdown-bar ang" style="width:${(v/items[i].maxScore)*100}%"></div></div>
+              <div class="breakdown-val ang">${v}/${items[i].maxScore}</div>
+            </div>`;
+        }).join('')}
+      </div>
+
+      <div class="interpretation">
+        <h3>Puntos de corte — Depresión Mixta</h3>
+        <div class="interp-grid">
+          ${SEVERITY.map(s => `
+            <div class="interp-item ${total >= s.min && total <= s.max ? 'current' : ''}">
+              <div class="interp-range">${s.min}–${s.max === 99 ? '≥21' : s.max}</div>
+              <div class="interp-desc">${s.shortLabel}</div>
+            </div>
+          `).join('')}
+        </div>
+        <p style="margin-top:16px; color:var(--text-dim); font-size:11px; line-height:1.7;">
+          Nota: La KMDRS evalúa síntomas de naturaleza excitatorios/mixtos y debe usarse junto con escalas de depresión (MADRS, HAMD) y de manía (YMRS). No reemplaza la evaluación clínica diagnóstica. Ref: Sani G et al. J Affect Disord. 2018;232:9-16. © Koukopoulos, Sani, Ghaemi 2015.
+        </p>
+      </div>
+
+      <button class="btn-copy" id="btnCopy" onclick="copyToClipboard()">⎘ Copiar para ficha clínica</button>
+      <button class="btn-restart" onclick="restart()">↩ Nueva evaluación</button>
+    </div>
+  `;
+}
+
+function buildPlainText() {
+  const total = totalScore();
+  const fExc  = factorScore(EXC_IDX);
+  const fAng  = factorScore(ANG_IDX);
+  const sev   = getSeverity(total);
+  const date  = new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric' });
+
+  const lines = [];
+  lines.push('KMDRS — ESCALA DE DEPRESION MIXTA DE KOUKOPOULOS');
+  lines.push('Fecha de aplicacion: ' + date);
+  lines.push('Periodo de referencia: semana previa a la entrevista');
+  lines.push('Tipo: Heteroadministrada por clinico');
+  lines.push('');
+  lines.push('--- FACTOR EXCITACION PSICOMOTORA (items 1-5 y 13) ---');
+  EXC_IDX.forEach(i => {
+    const v = answers[i] || 0;
+    const opt = items[i].options.find(o => o.score === v);
+    lines.push(items[i].id + '. ' + items[i].title + ': ' + v + '/' + items[i].maxScore);
+    lines.push('   ' + (opt ? opt.desc : ''));
+  });
+  lines.push('SUBTOTAL Factor Excitacion: ' + fExc + ' / ' + MAX_EXC);
+  lines.push('');
+  lines.push('--- FACTOR IRA / TENSION / IMPULSIVIDAD (items 6-12) ---');
+  ANG_IDX.forEach(i => {
+    const v = answers[i] || 0;
+    const opt = items[i].options.find(o => o.score === v);
+    lines.push(items[i].id + '. ' + items[i].title + ': ' + v + '/' + items[i].maxScore);
+    lines.push('   ' + (opt ? opt.desc : ''));
+  });
+  lines.push('SUBTOTAL Factor Ira/Tension: ' + fAng + ' / ' + MAX_ANG);
+  lines.push('');
+  lines.push('PUNTUACION TOTAL KMDRS: ' + total + ' / ' + MAX_TOT);
+  lines.push('SEVERIDAD DEPRESION MIXTA: ' + sev.label + ' (' + sev.min + '-' + (sev.max === 99 ? '>21' : sev.max) + ' puntos)');
+  lines.push('');
+  lines.push('Puntos de corte (Sani et al., 2018):');
+  lines.push('  0-4:   Sin depresion mixta');
+  lines.push('  5-9:   Posible depresion mixta');
+  lines.push('  10-15: Depresion mixta leve');
+  lines.push('  16-20: Depresion mixta moderada');
+  lines.push('  >=21:  Depresion mixta severa');
+  lines.push('');
+  lines.push('Nota: Usar junto con MADRS/HAMD y YMRS. No diagnostica por si sola.');
+  lines.push('Ref: Sani G et al. J Affect Disord. 2018;232:9-16.');
+  lines.push('© Koukopoulos A., Sani G., Ghaemi SN. 2015.');
+  return lines.join('\n');
+}
+
+async function copyToClipboard() {
+  const text = buildPlainText();
+  const btn  = document.getElementById('btnCopy');
+  try {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = '✓ Copiado';
+    btn.style.borderColor = '#7a9e87';
+    btn.style.color = '#7a9e87';
+    setTimeout(() => {
+      btn.textContent = '⎘ Copiar para ficha clínica';
+      btn.style.borderColor = '';
+      btn.style.color = '';
+    }, 2500);
+  } catch(e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => { btn.textContent = '⎘ Copiar para ficha clínica'; }, 2500);
+  }
+}
+
+function select(i, score) { answers[i] = score; render(); }
+function verResultado()    { if (answered() < items.length) return; showResults = true; render(); }
+function restart()         { answers = new Array(items.length).fill(null); showResults = false; render(); }
+
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAM-A — Escala de Ansiedad de Hamilton</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f2eeec;
+    --surface: #e9e3df;
+    --card: #ffffff;
+    --border: #dbd3ce;
+    --border-soft: #e6dfdb;
+    --accent: #b08878;      /* terracota rosada — diferente a las otras escalas */
+    --accent2: #7a9e87;     /* salvia verde */
+    --accent-psiq: #8fa8b8; /* azul niebla — ansiedad psíquica */
+    --accent-som:  #b08878; /* terracota — ansiedad somática */
+    --text: #353028;
+    --text-muted: #746b65;
+    --text-dim: #b0a49e;
+    --selected-bg: #f5efec;
+    --selected-border: #b08878;
+    --shadow: 0 2px 16px rgba(80,50,40,0.07);
+    --shadow-sm: 0 1px 6px rgba(80,50,40,0.05);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Jost', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.7;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 45% at 8% 12%, rgba(176,136,120,0.09) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 55% at 88% 82%, rgba(122,158,135,0.07) 0%, transparent 55%),
+      radial-gradient(ellipse 40% 40% at 72% 8%, rgba(143,168,184,0.06) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ── Header ── */
+  .header {
+    margin-bottom: 44px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-label {
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 40px;
+    font-weight: 300;
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  .header h1 em { font-style: italic; color: var(--accent); }
+
+  .header-desc {
+    margin-top: 12px;
+    color: var(--text-muted);
+    font-size: 12px;
+    max-width: 580px;
+    line-height: 1.65;
+  }
+
+  /* ── Instrucción ── */
+  .instruccion {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0;
+    padding: 18px 22px;
+    margin-bottom: 28px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .instruccion-title {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .instruccion p { color: var(--text-muted); font-size: 12.5px; line-height: 1.7; }
+
+  /* ── Leyenda de escala ── */
+  .scale-legend {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 7px;
+    margin-bottom: 28px;
+  }
+
+  .scale-leg-item {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 11px 8px;
+    box-shadow: var(--shadow-sm);
+    text-align: center;
+  }
+
+  .scale-leg-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 300;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 5px;
+  }
+
+  .scale-leg-txt { font-size: 10px; color: var(--text-muted); line-height: 1.3; }
+
+  /* ── Subgrupos ── */
+  .group-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 28px 0 12px;
+  }
+
+  .group-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    border: 1px solid;
+  }
+
+  .pill-psiq { color: var(--accent-psiq); border-color: var(--accent-psiq); background: rgba(143,168,184,0.08); }
+  .pill-som  { color: var(--accent-som);  border-color: var(--accent-som);  background: rgba(176,136,120,0.08); }
+
+  .group-line { flex: 1; height: 1px; background: var(--border-soft); }
+
+  /* ── Progreso ── */
+  .progress-wrap { margin-bottom: 24px; }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .progress-label { color: var(--text-dim); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+  .progress-count { color: var(--accent); font-size: 11px; font-weight: 500; }
+  .progress-bar   { height: 3px; background: var(--border-soft); border-radius: 3px; overflow: hidden; }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-psiq), var(--accent-som));
+    border-radius: 3px;
+    transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* ── Tarjeta de ítem ── */
+  .item-card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    animation: fadeSlide 0.25s ease;
+  }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .item-card.answered { border-color: var(--border); }
+
+  .item-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 6px;
+  }
+
+  .item-num {
+    min-width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    flex-shrink: 0;
+    margin-top: 1px;
+    transition: all 0.15s;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-dim);
+  }
+
+  .item-card.answered .item-num {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .item-title {
+    font-size: 13.5px;
+    font-weight: 400;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .item-guide {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin: 8px 0 16px 40px;
+    font-style: italic;
+  }
+
+  /* Botones de puntuación */
+  .score-btns {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 7px;
+    padding-left: 40px;
+  }
+
+  .score-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 10px 6px;
+    border: 1px solid var(--border-soft);
+    border-radius: 9px;
+    background: #faf8f5;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: 'Jost', sans-serif;
+  }
+
+  .score-btn:hover {
+    border-color: var(--accent);
+    background: var(--selected-bg);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(176,136,120,0.15);
+  }
+
+  .score-btn.active {
+    border-color: var(--accent);
+    background: var(--selected-bg);
+    box-shadow: 0 3px 12px rgba(176,136,120,0.2);
+  }
+
+  .score-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 400;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    transition: all 0.15s;
+  }
+
+  .score-btn.active .score-circle {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .score-label-txt {
+    font-size: 9px;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 1.25;
+    letter-spacing: 0.01em;
+    transition: color 0.15s;
+  }
+
+  .score-btn.active .score-label-txt { color: var(--accent); }
+
+  /* ── Botón resultado ── */
+  .btn-result {
+    display: block;
+    width: 100%;
+    margin-top: 24px;
+    padding: 16px;
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    box-shadow: 0 3px 14px rgba(176,136,120,0.3);
+  }
+
+  .btn-result:hover {
+    background: #9e7868;
+    box-shadow: 0 4px 18px rgba(176,136,120,0.4);
+    transform: translateY(-1px);
+  }
+
+  .btn-result:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* ── Resultados ── */
+  .results { animation: fadeSlide 0.4s ease; }
+
+  /* Score principal */
+  .score-display {
+    text-align: center;
+    padding: 48px 36px;
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .score-display::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 55% at 50% 110%, rgba(176,136,120,0.08) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  .score-label {
+    color: var(--text-dim);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .score-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 96px;
+    font-weight: 300;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .score-max { color: var(--text-dim); font-size: 12px; margin-bottom: 20px; }
+
+  .score-severity {
+    display: inline-block;
+    padding: 9px 28px;
+    border-radius: 24px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    border: 1px solid;
+  }
+
+  .severity-min      { color: #5e8f6e; border-color: #a8c9b3; background: #eef5f1; }
+  .severity-leve     { color: #7a8f5e; border-color: #b8c9a3; background: #f2f5ec; }
+  .severity-leve-mod { color: #9a7c3f; border-color: #d4b87a; background: #faf5ea; }
+  .severity-severe   { color: #a04545; border-color: #cc9090; background: #faeaea; }
+
+  /* Subtotales psíquica / somática */
+  .subtotals {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .subtotal-card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    padding: 22px 20px;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .subtotal-label {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .subtotal-label.psiq { color: var(--accent-psiq); }
+  .subtotal-label.som  { color: var(--accent-som); }
+
+  .subtotal-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 48px;
+    font-weight: 300;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .subtotal-number.psiq { color: var(--accent-psiq); }
+  .subtotal-number.som  { color: var(--accent-som); }
+
+  .subtotal-max { font-size: 11px; color: var(--text-dim); }
+
+  /* Breakdown */
+  .breakdown-section {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 26px 28px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .breakdown-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 300;
+    margin-bottom: 20px;
+    color: var(--text-muted);
+  }
+
+  .breakdown-group-label {
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 6px 0;
+    margin: 8px 0 4px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .breakdown-group-label.psiq { color: var(--accent-psiq); }
+  .breakdown-group-label.som  { color: var(--accent-som); }
+
+  .breakdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .breakdown-item:last-child { border-bottom: none; }
+
+  .breakdown-name { flex: 1; color: var(--text-muted); font-size: 12px; line-height: 1.35; }
+
+  .breakdown-bar-wrap { width: 90px; height: 5px; background: var(--border-soft); border-radius: 3px; overflow: hidden; }
+
+  .breakdown-bar { height: 100%; border-radius: 3px; }
+  .breakdown-bar.psiq { background: linear-gradient(90deg, var(--accent-psiq), #7ab3cc); }
+  .breakdown-bar.som  { background: linear-gradient(90deg, var(--accent-som), #c9a090); }
+
+  .breakdown-val { width: 28px; text-align: right; font-size: 12px; font-weight: 500; }
+  .breakdown-val.psiq { color: var(--accent-psiq); }
+  .breakdown-val.som  { color: var(--accent-som); }
+
+  /* Interpretation */
+  .interpretation {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 26px 28px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .interpretation h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 300;
+    margin-bottom: 16px;
+    color: var(--text-muted);
+  }
+
+  .interp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .interp-item {
+    padding: 13px 16px;
+    background: #faf7f5;
+    border-radius: 8px;
+    border: 1px solid var(--border-soft);
+  }
+
+  .interp-range { color: var(--text-dim); font-size: 10px; letter-spacing: 0.1em; margin-bottom: 4px; text-transform: uppercase; }
+  .interp-desc  { color: var(--text-muted); font-size: 12px; margin-bottom: 4px; }
+  .interp-note  { color: var(--text-dim); font-size: 10.5px; font-style: italic; line-height: 1.4; }
+
+  .interp-item.current { border-color: var(--accent); background: var(--selected-bg); }
+  .interp-item.current .interp-desc { color: var(--text); font-weight: 400; }
+
+  /* Bottom buttons */
+  .btn-copy {
+    display: block; width: 100%; margin-top: 18px; padding: 15px;
+    font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    background: transparent; border: 1px solid var(--accent);
+    border-radius: 8px; color: var(--accent); cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .btn-copy:hover { background: var(--selected-bg); }
+
+  .btn-restart {
+    display: block; width: 100%; margin-top: 10px; padding: 15px;
+    font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 400;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-muted); cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .btn-restart:hover { border-color: var(--text-muted); color: var(--text); background: var(--surface); }
+
+  @media (max-width: 600px) {
+    .header h1 { font-size: 28px; }
+    .scale-legend { grid-template-columns: repeat(3, 1fr); gap: 5px; }
+    .score-btns { padding-left: 0; gap: 5px; }
+    .score-circle { width: 24px; height: 24px; font-size: 11px; }
+    .score-label-txt { font-size: 8px; }
+    .subtotals { grid-template-columns: 1fr; }
+    .interp-grid { grid-template-columns: 1fr; }
+    .score-number { font-size: 72px; }
+    .item-card { padding: 16px 14px; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+// items[i] = { title, guide, group: 'psiq' | 'som' }
+const items = [
+  // ANSIEDAD PSÍQUICA (ítems 1,2,3,4,5,6,14)
+  {
+    title: "Estado de ánimo ansioso",
+    guide: "Preocupaciones, anticipación de lo peor, aprensión (anticipación temerosa), irritabilidad.",
+    group: "psiq"
+  },
+  {
+    title: "Tensión",
+    guide: "Sensación de tensión, imposibilidad de relajarse, reacciones con sobresalto, llanto fácil, temblores, sensación de inquietud.",
+    group: "psiq"
+  },
+  {
+    title: "Temores",
+    guide: "A la oscuridad, a los desconocidos, a quedarse solo, a los animales grandes, al tráfico, a las multitudes.",
+    group: "psiq"
+  },
+  {
+    title: "Insomnio",
+    guide: "Dificultad para dormirse, sueño interrumpido, sueño insatisfactorio y cansancio al despertar.",
+    group: "psiq"
+  },
+  {
+    title: "Intelectual (cognitivo)",
+    guide: "Dificultad para concentrarse, mala memoria.",
+    group: "psiq"
+  },
+  {
+    title: "Estado de ánimo deprimido",
+    guide: "Pérdida de interés, insatisfacción en las diversiones, depresión, despertar prematuro, cambios de humor durante el día.",
+    group: "psiq"
+  },
+  // ANSIEDAD SOMÁTICA (ítems 7,8,9,10,11,12,13)
+  {
+    title: "Síntomas somáticos generales (musculares)",
+    guide: "Dolores y molestias musculares, rigidez muscular, contracciones musculares, sacudidas clónicas, crujir de dientes, voz temblorosa.",
+    group: "som"
+  },
+  {
+    title: "Síntomas somáticos generales (sensoriales)",
+    guide: "Zumbidos de oídos, visión borrosa, sofocos y escalofríos, sensación de debilidad, sensación de hormigueo.",
+    group: "som"
+  },
+  {
+    title: "Síntomas cardiovasculares",
+    guide: "Taquicardia, palpitaciones, dolor en el pecho, latidos vasculares, sensación de desmayo, extrasístole.",
+    group: "som"
+  },
+  {
+    title: "Síntomas respiratorios",
+    guide: "Opresión o constricción en el pecho, sensación de ahogo, suspiros, disnea.",
+    group: "som"
+  },
+  {
+    title: "Síntomas gastrointestinales",
+    guide: "Dificultad para tragar, gases, dispepsia, dolor antes y después de comer, sensación de ardor, vómitos, diarrea, pérdida de peso, estreñimiento.",
+    group: "som"
+  },
+  {
+    title: "Síntomas genitourinarios",
+    guide: "Micción frecuente, micción urgente, amenorrea, menorragia, frigidez, eyaculación precoz, ausencia de erección, impotencia.",
+    group: "som"
+  },
+  {
+    title: "Síntomas autónomos",
+    guide: "Boca seca, rubor, palidez, tendencia a sudar, vértigos, cefaleas de tensión, piloerección.",
+    group: "som"
+  },
+  // ÍTEM 14 — vuelve a psíquica
+  {
+    title: "Comportamiento en la entrevista (general y fisiológico)",
+    guide: "Tenso, no relajado, agitación nerviosa, tics, inquietud, temblor de manos, ceño fruncido, palidez facial. Taquicardia de reposo, frecuencia respiratoria elevada, sudor, pupilas dilatadas, tics en párpados.",
+    group: "psiq"
+  }
+];
+
+// Índices según el PDF: psíquica = 1,2,3,4,5,6,14 → índices 0-5 y 13; somática = 7-13 → índices 6-12
+const PSIQ_IDX = [0,1,2,3,4,5,13];
+const SOM_IDX  = [6,7,8,9,10,11,12];
+
+const SCALE = [
+  { score: 0, label: "Ausente" },
+  { score: 1, label: "Leve" },
+  { score: 2, label: "Moderado" },
+  { score: 3, label: "Grave" },
+  { score: 4, label: "Muy grave" }
+];
+
+const SEVERITY = [
+  { min: 0,  max: 7,  label: "Sin ansiedad / Mínima",   cls: "severity-min",      note: "La ansiedad no representa un problema significativo en este momento." },
+  { min: 8,  max: 17, label: "Ansiedad leve",            cls: "severity-leve",     note: "Puede requerir evaluación complementaria o seguimiento." },
+  { min: 18, max: 24, label: "Ansiedad leve a moderada", cls: "severity-leve-mod", note: "Probable impacto en el funcionamiento diario. Considerar intervención." },
+  { min: 25, max: 56, label: "Ansiedad grave",           cls: "severity-severe",   note: "Impacto severo en la calidad de vida. Se recomienda tratamiento inmediato." }
+];
+
+let answers     = new Array(items.length).fill(null);
+let showResults = false;
+
+function getSeverity(score) {
+  return SEVERITY.find(s => score >= s.min && score <= s.max) || SEVERITY[0];
+}
+
+function getScoreColor(score) {
+  if (score <= 7)  return '#5e8f6e';
+  if (score <= 17) return '#7a8f5e';
+  if (score <= 24) return '#9a7c3f';
+  return '#a04545';
+}
+
+function answered() { return answers.filter(a => a !== null).length; }
+
+function subtotal(indices) {
+  return indices.reduce((s, i) => s + (answers[i] || 0), 0);
+}
+
+function render() {
+  const app = document.getElementById('app');
+  if (showResults) { renderResults(app); return; }
+
+  const done = answered();
+  const pct  = (done / items.length) * 100;
+
+  // Build items HTML grouped
+  let itemsHTML = '';
+  let lastGroup = null;
+  items.forEach((item, i) => {
+    // Group header
+    if (item.group !== lastGroup) {
+      if (item.group === 'psiq' && i === 0) {
+        itemsHTML += `
+          <div class="group-header">
+            <span class="group-pill pill-psiq">Ansiedad psíquica · ítems 1–6 y 14</span>
+            <div class="group-line"></div>
+          </div>`;
+      } else if (item.group === 'som') {
+        itemsHTML += `
+          <div class="group-header" style="margin-top:20px">
+            <span class="group-pill pill-som">Ansiedad somática · ítems 7–13</span>
+            <div class="group-line"></div>
+          </div>`;
+      } else if (item.group === 'psiq' && i === 13) {
+        itemsHTML += `
+          <div class="group-header" style="margin-top:20px">
+            <span class="group-pill pill-psiq">Comportamiento en entrevista · ítem 14</span>
+            <div class="group-line"></div>
+          </div>`;
+      }
+      lastGroup = item.group;
+    }
+
+    itemsHTML += `
+      <div class="item-card ${answers[i] !== null ? 'answered' : ''}">
+        <div class="item-top">
+          <span class="item-num">${i+1}</span>
+          <span class="item-title">${item.title}</span>
+        </div>
+        <div class="item-guide">${item.guide}</div>
+        <div class="score-btns">
+          ${SCALE.map(s => `
+            <button class="score-btn ${answers[i] === s.score ? 'active' : ''}"
+                    onclick="select(${i}, ${s.score})">
+              <span class="score-circle">${s.score}</span>
+              <span class="score-label-txt">${s.label}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  });
+
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">Evaluación psiquiátrica · Heteroadministrada</div>
+      <h1>Escala de Ansiedad de <em>Hamilton</em></h1>
+      <p class="header-desc">HAM-A · 14 ítems · Escala administrada por el clínico. Puntúe cada ítem de 0 a 4 valorando la intensidad y frecuencia del síntoma observado. Hamilton, 1959.</p>
+    </div>
+
+    <div class="instruccion">
+      <div class="instruccion-title">Instrucciones para el profesional</div>
+      <p>Seleccione para cada ítem la puntuación que corresponda según su experiencia clínica. Las definiciones son ejemplos orientadores. Todos los ítems deben ser puntuados. Se calculan subescalas de <strong>ansiedad psíquica</strong> (ítems 1–6 y 14) y <strong>ansiedad somática</strong> (ítems 7–13).</p>
+    </div>
+
+    <div class="scale-legend">
+      ${SCALE.map(s => `
+        <div class="scale-leg-item">
+          <div class="scale-leg-num">${s.score}</div>
+          <div class="scale-leg-txt">${s.label}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span class="progress-label">Completado</span>
+        <span class="progress-count">${done} / ${items.length}</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${pct}%"></div>
+      </div>
+    </div>
+
+    ${itemsHTML}
+
+    <button class="btn-result" onclick="verResultado()" ${done < items.length ? 'disabled' : ''}>
+      ${done < items.length ? `Faltan ${items.length - done} ítems` : 'Ver resultado →'}
+    </button>
+  `;
+}
+
+function renderResults(app) {
+  const total    = answers.reduce((s, a) => s + (a || 0), 0);
+  const psiq     = subtotal(PSIQ_IDX);
+  const som      = subtotal(SOM_IDX);
+  const severity = getSeverity(total);
+  const color    = getScoreColor(total);
+
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">Resultado de la evaluación</div>
+      <h1>Escala de Ansiedad de <em>Hamilton</em></h1>
+    </div>
+
+    <div class="results">
+
+      <div class="score-display">
+        <div class="score-label">Puntuación total</div>
+        <div class="score-number" style="color:${color}">${total}</div>
+        <div class="score-max">de 56 puntos posibles</div>
+        <span class="score-severity ${severity.cls}">${severity.label}</span>
+      </div>
+
+      <div class="subtotals">
+        <div class="subtotal-card">
+          <div class="subtotal-label psiq">Ansiedad psíquica</div>
+          <div class="subtotal-number psiq">${psiq}</div>
+          <div class="subtotal-max">de 28 pts · ítems 1–6 y 14</div>
+        </div>
+        <div class="subtotal-card">
+          <div class="subtotal-label som">Ansiedad somática</div>
+          <div class="subtotal-number som">${som}</div>
+          <div class="subtotal-max">de 28 pts · ítems 7–13</div>
+        </div>
+      </div>
+
+      <div class="breakdown-section">
+        <div class="breakdown-title">Desglose por ítem</div>
+
+        <div class="breakdown-group-label psiq">Ansiedad psíquica</div>
+        ${PSIQ_IDX.slice(0, 6).map(i => {
+          const val = answers[i] || 0;
+          return `
+            <div class="breakdown-item">
+              <div class="breakdown-name">${i+1}. ${items[i].title}</div>
+              <div class="breakdown-bar-wrap"><div class="breakdown-bar psiq" style="width:${(val/4)*100}%"></div></div>
+              <div class="breakdown-val psiq">${val}/4</div>
+            </div>`;
+        }).join('')}
+
+        <div class="breakdown-group-label som" style="margin-top:12px">Ansiedad somática</div>
+        ${SOM_IDX.map(i => {
+          const val = answers[i] || 0;
+          return `
+            <div class="breakdown-item">
+              <div class="breakdown-name">${i+1}. ${items[i].title}</div>
+              <div class="breakdown-bar-wrap"><div class="breakdown-bar som" style="width:${(val/4)*100}%"></div></div>
+              <div class="breakdown-val som">${val}/4</div>
+            </div>`;
+        }).join('')}
+
+        <div class="breakdown-group-label psiq" style="margin-top:12px">Comportamiento en entrevista</div>
+        ${[13].map(i => {
+          const val = answers[i] || 0;
+          return `
+            <div class="breakdown-item">
+              <div class="breakdown-name">14. ${items[i].title}</div>
+              <div class="breakdown-bar-wrap"><div class="breakdown-bar psiq" style="width:${(val/4)*100}%"></div></div>
+              <div class="breakdown-val psiq">${val}/4</div>
+            </div>`;
+        }).join('')}
+      </div>
+
+      <div class="interpretation">
+        <h3>Interpretación de la escala</h3>
+        <div class="interp-grid">
+          ${SEVERITY.map(s => `
+            <div class="interp-item ${total >= s.min && total <= s.max ? 'current' : ''}">
+              <div class="interp-range">${s.min}–${s.max} puntos</div>
+              <div class="interp-desc">${s.label}</div>
+              <div class="interp-note">${s.note}</div>
+            </div>
+          `).join('')}
+        </div>
+        <p style="margin-top:16px; color:var(--text-dim); font-size:11px; line-height:1.7;">
+          Nota: La HAM-A no tiene puntos de corte oficiales establecidos; una mayor puntuación indica mayor intensidad. Es sensible a variaciones tras tratamiento. Ref: Hamilton M. Brit J Med Psychol 1959;32:50-55.
+        </p>
+      </div>
+
+      <button class="btn-copy" id="btnCopy" onclick="copyToClipboard()">⎘ Copiar para ficha clínica</button>
+      <button class="btn-restart" onclick="restart()">↩ Nueva evaluación</button>
+    </div>
+  `;
+}
+
+function buildPlainText() {
+  const total = answers.reduce((s, a) => s + (a || 0), 0);
+  const psiq  = subtotal(PSIQ_IDX);
+  const som   = subtotal(SOM_IDX);
+  const sev   = getSeverity(total);
+  const date  = new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric' });
+  const labels = ['Ausente (0)', 'Leve (1)', 'Moderado (2)', 'Grave (3)', 'Muy grave/Incapacitante (4)'];
+
+  const lines = [];
+  lines.push('ESCALA DE ANSIEDAD DE HAMILTON (HAM-A)');
+  lines.push('Fecha de aplicacion: ' + date);
+  lines.push('Tipo: Heteroadministrada por clinico');
+  lines.push('');
+  lines.push('--- ANSIEDAD PSIQUICA (items 1-6 y 14) ---');
+  PSIQ_IDX.slice(0,6).forEach(i => {
+    const v = answers[i] || 0;
+    lines.push((i+1) + '. ' + items[i].title + ': ' + v + ' - ' + labels[v]);
+  });
+  lines.push('');
+  lines.push('--- ANSIEDAD SOMATICA (items 7-13) ---');
+  SOM_IDX.forEach(i => {
+    const v = answers[i] || 0;
+    lines.push((i+1) + '. ' + items[i].title + ': ' + v + ' - ' + labels[v]);
+  });
+  lines.push('');
+  lines.push('--- COMPORTAMIENTO EN ENTREVISTA (item 14) ---');
+  const v14 = answers[13] || 0;
+  lines.push('14. ' + items[13].title + ': ' + v14 + ' - ' + labels[v14]);
+  lines.push('');
+  lines.push('SUBTOTAL Ansiedad psiquica (items 1-6 y 14): ' + psiq + ' / 28');
+  lines.push('SUBTOTAL Ansiedad somatica (items 7-13):     ' + som  + ' / 28');
+  lines.push('PUNTUACION TOTAL: ' + total + ' / 56');
+  lines.push('NIVEL DE ANSIEDAD: ' + sev.label + ' (' + sev.min + '-' + sev.max + ' puntos)');
+  lines.push('Orientacion clinica: ' + sev.note);
+  lines.push('');
+  lines.push('Rangos de referencia:');
+  lines.push('  0-7:   Sin ansiedad / Minima');
+  lines.push('  8-17:  Ansiedad leve');
+  lines.push('  18-24: Ansiedad leve a moderada');
+  lines.push('  25-56: Ansiedad grave');
+  lines.push('');
+  lines.push('Fuente: Hamilton M. Brit J Med Psychol. 1959;32:50-55.');
+  return lines.join('\n');
+}
+
+async function copyToClipboard() {
+  const text = buildPlainText();
+  const btn  = document.getElementById('btnCopy');
+  try {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = '✓ Copiado';
+    btn.style.borderColor = '#7a9e87';
+    btn.style.color = '#7a9e87';
+    setTimeout(() => {
+      btn.textContent = '⎘ Copiar para ficha clínica';
+      btn.style.borderColor = '';
+      btn.style.color = '';
+    }, 2500);
+  } catch(e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => { btn.textContent = '⎘ Copiar para ficha clínica'; }, 2500);
+  }
+}
+
+function select(i, score) { answers[i] = score; render(); }
+function verResultado()    { if (answered() < items.length) return; showResults = true; render(); }
+function restart()         { answers = new Array(items.length).fill(null); showResults = false; render(); }
+
+render();
+</script>
+</body>
+</html>

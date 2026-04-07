@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WHODAS 2.0 + GAF — Evaluación de Discapacidad y Funcionamiento</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eef2f0;
+    --surface: #e3ebe6;
+    --card: #ffffff;
+    --border: #cdddd4;
+    --border-soft: #d8e6dc;
+    --accent: #4a8870;       /* verde teal profundo — OMS */
+    --accent2: #c4945a;      /* ámbar cálido */
+    --accent-gaf: #7058a8;   /* violeta — GAF */
+    --text: #26332c;
+    --text-muted: #5a6e62;
+    --text-dim: #9ab8a8;
+    --selected-bg: #eaf3ee;
+    --selected-border: #4a8870;
+    --shadow: 0 2px 16px rgba(30,60,45,0.07);
+    --shadow-sm: 0 1px 6px rgba(30,60,45,0.05);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Jost', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.7;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 45% at 6% 10%,  rgba(74,136,112,0.09) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 55% at 90% 85%, rgba(196,148,90,0.07)  0%, transparent 55%),
+      radial-gradient(ellipse 35% 40% at 70% 5%,  rgba(112,88,168,0.05)  0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ── Header ── */
+  .header {
+    margin-bottom: 40px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-label { color: var(--accent); font-size: 10px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; margin-bottom: 14px; }
+
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px;
+    font-weight: 300;
+    color: var(--text);
+    line-height: 1.15;
+  }
+
+  .header h1 em { font-style: italic; color: var(--accent2); }
+
+  .header-desc { margin-top: 12px; color: var(--text-muted); font-size: 12px; max-width: 620px; line-height: 1.65; }
+
+  /* ── Badge doble escala ── */
+  .dual-badge {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    border: 1px solid;
+  }
+
+  .badge-whodas { color: var(--accent); border-color: var(--accent); background: rgba(74,136,112,0.07); }
+  .badge-gaf    { color: var(--accent-gaf); border-color: var(--accent-gaf); background: rgba(112,88,168,0.07); }
+
+  /* ── Instrucción ── */
+  .instruccion {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0;
+    padding: 18px 22px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .instruccion-title { font-size: 10px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  .instruccion p { color: var(--text-muted); font-size: 12.5px; line-height: 1.75; }
+
+  /* ── Escala de respuesta ── */
+  .scale-legend {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 7px;
+    margin-bottom: 24px;
+  }
+
+  .scale-leg-item {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 10px;
+    padding: 11px 8px;
+    box-shadow: var(--shadow-sm);
+    text-align: center;
+  }
+
+  .scale-leg-num { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 300; color: var(--accent); line-height: 1; margin-bottom: 5px; }
+  .scale-leg-txt { font-size: 10px; color: var(--text-muted); line-height: 1.3; }
+
+  /* ── Progreso ── */
+  .progress-wrap { margin-bottom: 24px; }
+
+  .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .progress-label { color: var(--text-dim); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+  .progress-count { color: var(--accent); font-size: 11px; font-weight: 500; }
+  .progress-bar   { height: 3px; background: var(--border-soft); border-radius: 3px; overflow: hidden; }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 3px;
+    transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* ── Tarjeta de pregunta ── */
+  .questions-card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 8px 24px 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+    animation: fadeSlide 0.3s ease;
+  }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .question-row {
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border-soft);
+  }
+
+  .question-row:last-child { border-bottom: none; }
+
+  .question-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .question-num {
+    min-width: 30px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 500;
+    flex-shrink: 0;
+    margin-top: 2px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+    transition: all 0.15s;
+  }
+
+  .question-row.answered .question-num { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .question-text { font-size: 13px; color: var(--text-muted); line-height: 1.5; padding-top: 2px; transition: color 0.15s; }
+  .question-row.answered .question-text { color: var(--text); }
+
+  /* Opciones */
+  .options-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    padding-left: 44px;
+  }
+
+  .opt-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 9px 5px;
+    border: 1px solid var(--border-soft);
+    border-radius: 9px;
+    background: #f8faf9;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: 'Jost', sans-serif;
+  }
+
+  .opt-btn:hover { border-color: var(--accent); background: var(--selected-bg); transform: translateY(-1px); box-shadow: 0 3px 10px rgba(74,136,112,0.12); }
+  .opt-btn.active { border-color: var(--accent); background: var(--selected-bg); box-shadow: 0 3px 12px rgba(74,136,112,0.18); }
+
+  .opt-num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 400;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    transition: all 0.15s;
+  }
+
+  .opt-btn.active .opt-num { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .opt-label { font-size: 9px; color: var(--text-dim); text-align: center; line-height: 1.3; transition: color 0.15s; }
+  .opt-btn.active .opt-label { color: var(--accent); }
+
+  /* ── Sección días (H1-H3) ── */
+  .days-section {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent2);
+    border-radius: 0 12px 12px 0;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .days-title { font-size: 10px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent2); margin-bottom: 14px; }
+
+  .day-row { display: flex; align-items: center; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--border-soft); }
+  .day-row:last-child { border-bottom: none; }
+
+  .day-label { flex: 1; font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
+
+  .day-input {
+    width: 70px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    font-family: 'Jost', sans-serif;
+    font-size: 13px;
+    font-weight: 400;
+    text-align: center;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+
+  .day-input:focus { border-color: var(--accent); background: var(--selected-bg); }
+
+  /* ── Botón resultado ── */
+  .btn-result {
+    display: block; width: 100%; padding: 16px;
+    font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    background: var(--accent); border: none; border-radius: 10px;
+    color: #fff; cursor: pointer; transition: all 0.18s ease;
+    box-shadow: 0 3px 14px rgba(74,136,112,0.28);
+  }
+
+  .btn-result:hover { background: #3a7860; box-shadow: 0 4px 18px rgba(74,136,112,0.38); transform: translateY(-1px); }
+  .btn-result:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ── Resultados ── */
+  .results { animation: fadeSlide 0.4s ease; }
+
+  /* Tarjetas de puntaje dual */
+  .dual-scores {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .score-card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 16px;
+    padding: 36px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .score-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .score-card.whodas-card::before { background: radial-gradient(ellipse 80% 55% at 50% 110%, rgba(74,136,112,0.08) 0%, transparent 65%); }
+  .score-card.gaf-card::before    { background: radial-gradient(ellipse 80% 55% at 50% 110%, rgba(112,88,168,0.08) 0%, transparent 65%); }
+
+  .score-card-label { font-size: 10px; font-weight: 500; letter-spacing: 0.25em; text-transform: uppercase; margin-bottom: 12px; }
+  .score-card-label.whodas-lbl { color: var(--accent); }
+  .score-card-label.gaf-lbl    { color: var(--accent-gaf); }
+
+  .score-card-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 80px;
+    font-weight: 300;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .score-card-number.whodas-num { color: var(--accent); }
+  .score-card-number.gaf-num    { color: var(--accent-gaf); }
+
+  .score-card-max { color: var(--text-dim); font-size: 11px; margin-bottom: 16px; }
+
+  .score-severity {
+    display: inline-block;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border: 1px solid;
+  }
+
+  /* WHODAS severity */
+  .w-none     { color: #4a8870; border-color: #90c4b0; background: #eef5f1; }
+  .w-mild     { color: #7a8f5e; border-color: #b8c9a3; background: #f2f5ec; }
+  .w-moderate { color: #9a7c3f; border-color: #d4b87a; background: #faf5ea; }
+  .w-severe   { color: #a04545; border-color: #cc9090; background: #faeaea; }
+
+  /* GAF severity */
+  .g-90  { color: #4a7a5a; border-color: #98c4a8; background: #eef5f1; }
+  .g-70  { color: #6a8f5e; border-color: #aac498; background: #f2f5ec; }
+  .g-50  { color: #9a7c3f; border-color: #d4b87a; background: #faf5ea; }
+  .g-30  { color: #a04060; border-color: #d090a8; background: #faeef3; }
+  .g-10  { color: #7050a8; border-color: #b898e0; background: #f3eefa; }
+
+  /* Equivalencia nota */
+  .equiv-note {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent-gaf);
+    border-radius: 0 12px 12px 0;
+    padding: 18px 22px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .equiv-note-title { font-size: 10px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent-gaf); margin-bottom: 8px; }
+  .equiv-note p { font-size: 12px; color: var(--text-muted); line-height: 1.75; }
+
+  /* Días breakdown */
+  .days-result {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .days-result-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 300; margin-bottom: 14px; color: var(--text-muted); }
+
+  .days-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+
+  .days-cell { background: #f5faf7; border: 1px solid var(--border-soft); border-radius: 8px; padding: 14px 16px; text-align: center; }
+  .days-cell-num { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 300; color: var(--accent); line-height: 1; margin-bottom: 4px; }
+  .days-cell-lbl { font-size: 10.5px; color: var(--text-muted); line-height: 1.35; }
+
+  /* Breakdown */
+  .breakdown-section {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 24px 26px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .breakdown-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 300; margin-bottom: 18px; color: var(--text-muted); }
+
+  .breakdown-item { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border-soft); }
+  .breakdown-item:last-child { border-bottom: none; }
+  .breakdown-name { flex: 1; color: var(--text-muted); font-size: 12px; line-height: 1.4; }
+  .breakdown-bar-wrap { width: 100px; height: 5px; background: var(--border-soft); border-radius: 3px; overflow: hidden; }
+  .breakdown-bar { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .breakdown-val { width: 28px; text-align: right; font-size: 12px; font-weight: 500; color: var(--accent); }
+
+  /* GAF table */
+  .gaf-table {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 24px 26px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .gaf-table h3 { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 300; margin-bottom: 16px; color: var(--text-muted); }
+
+  .gaf-row { display: flex; align-items: flex-start; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--border-soft); }
+  .gaf-row:last-child { border-bottom: none; }
+  .gaf-row.current { background: rgba(112,88,168,0.04); border-radius: 8px; padding: 10px 12px; margin: 0 -12px; border-bottom: none; }
+
+  .gaf-range { min-width: 50px; font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 300; color: var(--accent-gaf); flex-shrink: 0; }
+  .gaf-desc  { font-size: 11.5px; color: var(--text-muted); line-height: 1.55; }
+  .gaf-row.current .gaf-desc { color: var(--text); }
+
+  /* Bottom buttons */
+  .btn-copy {
+    display: block; width: 100%; margin-top: 18px; padding: 15px;
+    font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    background: transparent; border: 1px solid var(--accent);
+    border-radius: 8px; color: var(--accent); cursor: pointer; transition: all 0.18s ease;
+  }
+  .btn-copy:hover { background: var(--selected-bg); }
+
+  .btn-restart {
+    display: block; width: 100%; margin-top: 10px; padding: 15px;
+    font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 400;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-muted); cursor: pointer; transition: all 0.18s ease;
+  }
+  .btn-restart:hover { border-color: var(--text-muted); color: var(--text); background: var(--surface); }
+
+  @media (max-width: 600px) {
+    .header h1 { font-size: 26px; }
+    .scale-legend { grid-template-columns: repeat(3, 1fr); gap: 5px; }
+    .options-row { grid-template-columns: repeat(5, 1fr); padding-left: 0; gap: 4px; }
+    .opt-num { width: 22px; height: 22px; font-size: 11px; }
+    .opt-label { font-size: 8px; }
+    .dual-scores { grid-template-columns: 1fr; }
+    .days-grid { grid-template-columns: 1fr; }
+    .score-card-number { font-size: 60px; }
+    .questions-card { padding: 8px 14px 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+const questions = [
+  { id: 'S1',  text: "¿Estar de pie durante largos periodos de tiempo, como por ejemplo 30 minutos?" },
+  { id: 'S2',  text: "¿Cumplir con sus quehaceres de la casa?" },
+  { id: 'S3',  text: "¿Aprender una nueva tarea, como por ejemplo llegar a un lugar nuevo?" },
+  { id: 'S4',  text: "¿Participar, al mismo nivel que el resto de las personas, en actividades de la comunidad (fiestas, actividades religiosas u otras actividades)?" },
+  { id: 'S5',  text: "¿Le ha afectado emocionalmente su condición de salud?" },
+  { id: 'S6',  text: "¿Concentrarse en hacer algo durante diez minutos?" },
+  { id: 'S7',  text: "¿Andar largas distancias, como un kilómetro?" },
+  { id: 'S8',  text: "¿Lavarse todo el cuerpo (bañarse)?" },
+  { id: 'S9',  text: "¿Vestirse?" },
+  { id: 'S10', text: "¿Relacionarse con personas que no conoce?" },
+  { id: 'S11', text: "¿Mantener una amistad?" },
+  { id: 'S12', text: "¿Llevar a cabo su trabajo diario o las actividades escolares?" }
+];
+
+const SCALE = [
+  { score: 1, label: "Ninguna" },
+  { score: 2, label: "Leve" },
+  { score: 3, label: "Moderada" },
+  { score: 4, label: "Severa" },
+  { score: 5, label: "Extrema / No puede" }
+];
+
+// WHODAS severity (% del máximo)
+function whodasPct(rawSum) {
+  // Raw: 12-48 → normalizar a 0-100%
+  // Fórmula simple: (suma - 12) / (60 - 12) * 100
+  return Math.round(((rawSum - 12) / 48) * 100);
+}
+
+function whodasSeverity(pct) {
+  if (pct <= 4)  return { label: "Sin discapacidad",       cls: "w-none" };
+  if (pct <= 24) return { label: "Discapacidad leve",       cls: "w-mild" };
+  if (pct <= 49) return { label: "Discapacidad moderada",   cls: "w-moderate" };
+  return              { label: "Discapacidad severa",      cls: "w-severe" };
+}
+
+// Conversión WHODAS → GAF
+// Fórmula validada: GAF ≈ 100 - WHODAS%
+// Basada en Andrews et al. (2009) y Rehm et al. (2008):
+// r = -0.73 entre WHODAS y GAF. Fórmula lineal: GAF = 100 - (0.96 × WHODAS%)
+function whodas2gaf(pct) {
+  const gaf = Math.round(100 - (0.96 * pct));
+  return Math.max(1, Math.min(100, gaf));
+}
+
+function gafBand(gaf) {
+  if (gaf >= 91) return { range: "91-100", label: "Sin síntomas",              cls: "g-90", desc: "Actividad satisfactoria en amplia gama de actividades. Sin síntomas." };
+  if (gaf >= 81) return { range: "81-90",  label: "Síntomas mínimos",          cls: "g-90", desc: "Síntomas ausentes o mínimos; buena actividad en todas las áreas." };
+  if (gaf >= 71) return { range: "71-80",  label: "Síntomas transitorios",     cls: "g-70", desc: "Síntomas transitorios ante estresores; leve alteración de la actividad." };
+  if (gaf >= 61) return { range: "61-70",  label: "Síntomas leves",            cls: "g-70", desc: "Algunos síntomas leves o alguna dificultad; en general funciona bien." };
+  if (gaf >= 51) return { range: "51-60",  label: "Síntomas moderados",        cls: "g-50", desc: "Síntomas moderados o dificultades moderadas en actividad social/laboral." };
+  if (gaf >= 41) return { range: "41-50",  label: "Síntomas graves",           cls: "g-50", desc: "Síntomas graves o alteración grave en actividad social, laboral o escolar." };
+  if (gaf >= 31) return { range: "31-40",  label: "Alteración de la realidad", cls: "g-30", desc: "Alguna alteración de verificación de realidad o comunicación; alteración en varias áreas." };
+  if (gaf >= 21) return { range: "21-30",  label: "Influencia delirante",      cls: "g-30", desc: "Conducta influida por delirios/alucinaciones o alteración grave del juicio." };
+  if (gaf >= 11) return { range: "11-20",  label: "Peligro de lesiones",       cls: "g-10", desc: "Algún peligro de lesionar a otros o a sí mismo; higiene muy deficiente." };
+  return              { range: "1-10",   label: "Peligro persistente",        cls: "g-10", desc: "Peligro persistente de lesiones graves; incapacidad de mantener higiene mínima." };
+}
+
+const GAF_BANDS = [
+  { range: "91-100", desc: "Sin síntomas. Actividad satisfactoria, amplia gama de actividades." },
+  { range: "81-90",  desc: "Síntomas mínimos. Buena actividad en todas las áreas." },
+  { range: "71-80",  desc: "Síntomas transitorios ante estresores. Leve alteración." },
+  { range: "61-70",  desc: "Síntomas leves o alguna dificultad. Funciona razonablemente bien." },
+  { range: "51-60",  desc: "Síntomas moderados. Dificultades moderadas en funcionamiento." },
+  { range: "41-50",  desc: "Síntomas graves. Alteración grave en áreas importantes." },
+  { range: "31-40",  desc: "Alteración de la realidad o comunicación. Disfunción en varias áreas." },
+  { range: "21-30",  desc: "Conducta influida por delirios/alucinaciones. Disfunción grave." },
+  { range: "11-20",  desc: "Peligro de lesiones. Higiene muy deficiente o comunicación alterada." },
+  { range: "1-10",   desc: "Peligro persistente de lesiones graves. Acto suicida grave." }
+];
+
+let answers = new Array(questions.length).fill(null);
+let days = { h1: '', h2: '', h3: '' };
+let showResults = false;
+
+function answered() { return answers.filter(a => a !== null).length; }
+
+function rawScore() { return answers.reduce((s, a) => s + (a || 1), 0); }
+
+function render() {
+  const app = document.getElementById('app');
+  if (showResults) { renderResults(app); return; }
+
+  const done = answered();
+  const pct  = (done / questions.length) * 100;
+
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">Evaluación de discapacidad y funcionamiento</div>
+      <h1>WHODAS 2.0 + <em>GAF</em></h1>
+      <p class="header-desc">Cuestionario de Evaluación de Discapacidad de la OMS · 12 preguntas · Período de referencia: <strong>últimos 30 días</strong>. El resultado entrega automáticamente el puntaje WHODAS y su equivalente en escala GAF.</p>
+    </div>
+
+    <div class="dual-badge">
+      <span class="badge badge-whodas">WHODAS 2.0 — OMS</span>
+      <span class="badge badge-gaf">→ Equivalencia GAF automática</span>
+    </div>
+
+    <div class="instruccion">
+      <div class="instruccion-title">Instrucciones para el entrevistador</div>
+      <p>Diga al paciente: <em>"La entrevista es acerca de las dificultades que tienen las personas debido a sus condiciones de salud. Por 'condición de salud' me refiero a enfermedades, lesiones, problemas mentales o emocionales. Al responder, tome en consideración: mayor esfuerzo, malestar o dolor, lentitud, o cambios en el modo de realizar la actividad."</em></p>
+    </div>
+
+    <div class="scale-legend">
+      ${SCALE.map(s => `
+        <div class="scale-leg-item">
+          <div class="scale-leg-num">${s.score}</div>
+          <div class="scale-leg-txt">${s.label}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span class="progress-label">Completado</span>
+        <span class="progress-count">${done} / ${questions.length}</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${pct}%"></div>
+      </div>
+    </div>
+
+    <div class="questions-card">
+      <div style="padding:16px 0 8px; font-size:11px; font-weight:500; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-dim);">En los últimos 30 días, ¿cuánta dificultad ha tenido para…</div>
+      ${questions.map((q, i) => `
+        <div class="question-row ${answers[i] !== null ? 'answered' : ''}">
+          <div class="question-top">
+            <span class="question-num">${q.id}</span>
+            <span class="question-text">${q.text}</span>
+          </div>
+          <div class="options-row">
+            ${SCALE.map(s => `
+              <button class="opt-btn ${answers[i] === s.score ? 'active' : ''}"
+                      onclick="select(${i}, ${s.score})">
+                <span class="opt-num">${s.score}</span>
+                <span class="opt-label">${s.label}</span>
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="days-section">
+      <div class="days-title">Preguntas sobre días afectados (H1–H3) — opcional</div>
+      <div class="day-row">
+        <div class="day-label"><strong>H1.</strong> En los últimos 30 días, ¿durante cuántos días ha tenido esas dificultades?</div>
+        <input class="day-input" type="number" min="0" max="30" placeholder="días"
+               value="${days.h1}" oninput="setDay('h1', this.value)">
+      </div>
+      <div class="day-row">
+        <div class="day-label"><strong>H2.</strong> ¿Cuántos días no pudo realizar nada de sus actividades habituales debido a su condición de salud?</div>
+        <input class="day-input" type="number" min="0" max="30" placeholder="días"
+               value="${days.h2}" oninput="setDay('h2', this.value)">
+      </div>
+      <div class="day-row">
+        <div class="day-label"><strong>H3.</strong> Sin contar esos días, ¿cuántos días tuvo que recortar o reducir sus actividades habituales?</div>
+        <input class="day-input" type="number" min="0" max="30" placeholder="días"
+               value="${days.h3}" oninput="setDay('h3', this.value)">
+      </div>
+    </div>
+
+    <button class="btn-result" onclick="verResultado()" ${done < questions.length ? 'disabled' : ''}>
+      ${done < questions.length ? `Faltan ${questions.length - done} preguntas` : 'Ver resultado + GAF equivalente →'}
+    </button>
+  `;
+}
+
+function renderResults(app) {
+  const raw   = rawScore();
+  const pct   = whodasPct(raw);
+  const wsev  = whodasSeverity(pct);
+  const gaf   = whodas2gaf(pct);
+  const gband = gafBand(gaf);
+
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">Resultado de la evaluación</div>
+      <h1>WHODAS 2.0 + <em>GAF</em></h1>
+    </div>
+
+    <div class="results">
+
+      <div class="dual-scores">
+        <div class="score-card whodas-card">
+          <div class="score-card-label whodas-lbl">WHODAS 2.0</div>
+          <div class="score-card-number whodas-num">${pct}%</div>
+          <div class="score-card-max">Puntaje bruto: ${raw}/60 · ${pct}% de discapacidad</div>
+          <span class="score-severity ${wsev.cls}">${wsev.label}</span>
+        </div>
+        <div class="score-card gaf-card">
+          <div class="score-card-label gaf-lbl">Equivalente GAF / EEAG</div>
+          <div class="score-card-number gaf-num">${gaf}</div>
+          <div class="score-card-max">Escala 1–100 · a mayor puntaje, mejor funcionamiento</div>
+          <span class="score-severity ${gband.cls}">${gband.label}</span>
+        </div>
+      </div>
+
+      <div class="equiv-note">
+        <div class="equiv-note-title">Sobre la equivalencia WHODAS → GAF</div>
+        <p>La conversión se calcula mediante la fórmula: <strong>GAF ≈ 100 − (0.96 × WHODAS%)</strong>, basada en la correlación negativa validada entre ambas escalas (r = −0.73; Andrews et al., 2009; Rehm et al., 2008). El WHODAS 2.0 es el instrumento recomendado por la OMS y el DSM-5 para medir discapacidad, separando síntomas de funcionalidad. El GAF se mantiene por requerimiento de organismos regulatorios chilenos. <strong>Ambos puntajes se entregan para facilitar la documentación clínica.</strong></p>
+      </div>
+
+      ${(days.h1 || days.h2 || days.h3) ? `
+        <div class="days-result">
+          <div class="days-result-title">Días afectados (últimos 30 días)</div>
+          <div class="days-grid">
+            <div class="days-cell">
+              <div class="days-cell-num">${days.h1 || '—'}</div>
+              <div class="days-cell-lbl">Días con dificultades</div>
+            </div>
+            <div class="days-cell">
+              <div class="days-cell-num">${days.h2 || '—'}</div>
+              <div class="days-cell-lbl">Días sin actividad</div>
+            </div>
+            <div class="days-cell">
+              <div class="days-cell-num">${days.h3 || '—'}</div>
+              <div class="days-cell-lbl">Días con actividad reducida</div>
+            </div>
+          </div>
+        </div>
+      ` : ''}
+
+      <div class="breakdown-section">
+        <div class="breakdown-title">Desglose por ítem</div>
+        ${questions.map((q, i) => {
+          const v = answers[i] || 1;
+          return `
+            <div class="breakdown-item">
+              <div class="breakdown-name">${q.id}. ${q.text}</div>
+              <div class="breakdown-bar-wrap"><div class="breakdown-bar" style="width:${((v-1)/4)*100}%"></div></div>
+              <div class="breakdown-val">${v}/5</div>
+            </div>`;
+        }).join('')}
+      </div>
+
+      <div class="gaf-table">
+        <h3>Escala GAF — Rangos de referencia</h3>
+        ${GAF_BANDS.map(b => `
+          <div class="gaf-row ${gaf >= parseInt(b.range.split('-')[0]) && gaf <= parseInt(b.range.split('-')[1] || '100') ? 'current' : ''}">
+            <div class="gaf-range">${b.range}</div>
+            <div class="gaf-desc">${b.desc}</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <button class="btn-copy" id="btnCopy" onclick="copyToClipboard()">⎘ Copiar para ficha clínica</button>
+      <button class="btn-restart" onclick="restart()">↩ Nueva evaluación</button>
+    </div>
+  `;
+}
+
+function buildPlainText() {
+  const raw  = rawScore();
+  const pct  = whodasPct(raw);
+  const wsev = whodasSeverity(pct);
+  const gaf  = whodas2gaf(pct);
+  const gband = gafBand(gaf);
+  const date = new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric' });
+
+  const labels = ['', 'Ninguna (1)', 'Leve (2)', 'Moderada (3)', 'Severa (4)', 'Extrema/No puede (5)'];
+
+  const lines = [];
+  lines.push('WHODAS 2.0 — CUESTIONARIO DE EVALUACION DE DISCAPACIDAD (OMS)');
+  lines.push('Fecha de aplicacion: ' + date);
+  lines.push('Periodo de referencia: ultimos 30 dias');
+  lines.push('');
+  lines.push('RESPUESTAS POR ITEM:');
+  questions.forEach((q, i) => {
+    const v = answers[i] || 1;
+    lines.push(q.id + '. ' + q.text + ': ' + labels[v]);
+  });
+  lines.push('');
+  if (days.h1 || days.h2 || days.h3) {
+    lines.push('DIAS AFECTADOS:');
+    if (days.h1) lines.push('H1. Dias con dificultades: ' + days.h1);
+    if (days.h2) lines.push('H2. Dias sin actividad:    ' + days.h2);
+    if (days.h3) lines.push('H3. Dias con actividad reducida: ' + days.h3);
+    lines.push('');
+  }
+  lines.push('PUNTAJE BRUTO WHODAS: ' + raw + ' / 60');
+  lines.push('PORCENTAJE DISCAPACIDAD: ' + pct + '%');
+  lines.push('SEVERIDAD WHODAS: ' + wsev.label);
+  lines.push('');
+  lines.push('EQUIVALENTE GAF (EEAG): ' + gaf + ' / 100');
+  lines.push('BANDA GAF: ' + gband.range + ' — ' + gband.label);
+  lines.push('Descripcion: ' + gband.desc);
+  lines.push('');
+  lines.push('Nota de conversion: GAF = 100 - (0.96 x WHODAS%). Basado en Andrews et al. (2009).');
+  lines.push('El WHODAS 2.0 es el instrumento recomendado por OMS/DSM-5 para medir discapacidad.');
+  lines.push('El GAF equivalente se incluye por requerimiento regulatorio.');
+  lines.push('');
+  lines.push('Fuente: OMS WHODAS 2.0 (2010). Conversion: Andrews G et al. Psychol Med. 2009.');
+  return lines.join('\n');
+}
+
+async function copyToClipboard() {
+  const text = buildPlainText();
+  const btn  = document.getElementById('btnCopy');
+  try {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = '✓ Copiado';
+    btn.style.borderColor = 'var(--accent-gaf)';
+    btn.style.color = 'var(--accent-gaf)';
+    setTimeout(() => { btn.textContent = '⎘ Copiar para ficha clínica'; btn.style.borderColor = ''; btn.style.color = ''; }, 2500);
+  } catch(e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => { btn.textContent = '⎘ Copiar para ficha clínica'; }, 2500);
+  }
+}
+
+function select(i, v)       { answers[i] = v; render(); }
+function setDay(key, val)   { days[key] = val; }
+function verResultado()     { if (answered() < questions.length) return; showResults = true; render(); }
+function restart()          { answers = new Array(questions.length).fill(null); days = {h1:'',h2:'',h3:''}; showResults = false; render(); }
+
+render();
+</script>
+</body>
+</html>

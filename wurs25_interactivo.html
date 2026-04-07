@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WURS-25 — Escala de Wender Utah</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4f2;
+    --surface: #e4ece7;
+    --card: #ffffff;
+    --border: #ccdbd3;
+    --border-soft: #d8e6de;
+    --accent: #3a8060;       /* verde jade — único WURS */
+    --accent2: #c09050;      /* ocre cálido */
+    --text: #1e2e28;
+    --text-muted: #506858;
+    --text-dim: #90b0a0;
+    --selected-bg: #e8f3ee;
+    --selected-border: #3a8060;
+    --shadow: 0 2px 16px rgba(20,60,40,0.07);
+    --shadow-sm: 0 1px 6px rgba(20,60,40,0.05);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Jost', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.7;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 45% at 6% 10%,  rgba(58,128,96,0.09) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 55% at 90% 85%, rgba(192,144,80,0.07) 0%, transparent 55%),
+      radial-gradient(ellipse 35% 40% at 72% 5%,  rgba(58,128,96,0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 740px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* ── Header ── */
+  .header {
+    margin-bottom: 44px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-label { color: var(--accent); font-size: 10px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; margin-bottom: 14px; }
+
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 38px;
+    font-weight: 300;
+    color: var(--text);
+    line-height: 1.15;
+  }
+
+  .header h1 em { font-style: italic; color: var(--accent2); }
+  .header-desc { margin-top: 12px; color: var(--text-muted); font-size: 12px; max-width: 560px; line-height: 1.65; }
+
+  /* ── Instrucción ── */
+  .instruccion {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0;
+    padding: 20px 24px;
+    margin-bottom: 28px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .instruccion-title { font-size: 10px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin-bottom: 10px; }
+  .instruccion p { color: var(--text-muted); font-size: 13px; line-height: 1.8; }
+  .instruccion p strong { color: var(--text); }
+
+  /* ── Leyenda ── */
+  .scale-legend {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 28px;
+  }
+
+  .scale-leg-item { background: var(--card); border: 1px solid var(--border-soft); border-radius: 10px; padding: 12px 10px; box-shadow: var(--shadow-sm); text-align: center; }
+  .scale-leg-num  { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 300; color: var(--accent); line-height: 1; margin-bottom: 6px; }
+  .scale-leg-txt  { font-size: 10.5px; color: var(--text-muted); line-height: 1.35; }
+
+  /* ── Progreso ── */
+  .progress-wrap { margin-bottom: 24px; }
+  .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .progress-label { color: var(--text-dim); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
+  .progress-count { color: var(--accent); font-size: 11px; font-weight: 500; }
+  .progress-bar   { height: 3px; background: var(--border-soft); border-radius: 3px; overflow: hidden; }
+  .progress-fill  { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 3px; transition: width 0.4s cubic-bezier(0.4,0,0.2,1); }
+
+  /* ── Lista de ítems ── */
+  .items-card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 14px;
+    padding: 8px 28px 24px;
+    box-shadow: var(--shadow);
+    margin-bottom: 24px;
+    animation: fadeSlide 0.3s ease;
+  }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .item-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border-soft);
+    transition: background 0.1s;
+  }
+
+  .item-row:last-child { border-bottom: none; }
+
+  .item-left { display: flex; align-items: center; gap: 13px; }
+
+  .item-num {
+    min-width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px; font-size: 11px; font-weight: 500;
+    flex-shrink: 0;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text-dim);
+    transition: all 0.15s;
+  }
+
+  .item-row.answered .item-num { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  .item-text {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.45;
+    transition: color 0.15s;
+  }
+
+  .item-row.answered .item-text { color: var(--text); }
+
+  /* Botones de puntaje */
+  .score-btns { display: flex; gap: 6px; flex-shrink: 0; }
+
+  .score-btn {
+    width: 38px; height: 38px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-weight: 300;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .score-btn:hover { border-color: var(--accent); background: var(--selected-bg); color: var(--accent); }
+  .score-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(58,128,96,0.25); }
+
+  /* ── Botón resultado ── */
+  .btn-result {
+    display: block; width: 100%; padding: 16px;
+    font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    background: var(--accent); border: none; border-radius: 10px;
+    color: #fff; cursor: pointer; transition: all 0.18s ease;
+    box-shadow: 0 3px 14px rgba(58,128,96,0.28);
+  }
+
+  .btn-result:hover { background: #2a6a4a; box-shadow: 0 4px 18px rgba(58,128,96,0.38); transform: translateY(-1px); }
+  .btn-result:disabled { opacity: 0.35; cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ── Resultados ── */
+  .results { animation: fadeSlide 0.4s ease; }
+
+  .score-display {
+    text-align: center; padding: 52px 36px;
+    background: var(--card); border: 1px solid var(--border-soft);
+    border-radius: 16px; margin-bottom: 20px;
+    position: relative; overflow: hidden; box-shadow: var(--shadow);
+  }
+
+  .score-display::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 55% at 50% 110%, rgba(58,128,96,0.09) 0%, transparent 65%);
+    pointer-events: none;
+  }
+
+  .score-label { color: var(--text-dim); font-size: 10px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; margin-bottom: 16px; }
+  .score-number { font-family: 'Playfair Display', serif; font-size: 100px; font-weight: 300; line-height: 1; margin-bottom: 8px; }
+  .score-max { color: var(--text-dim); font-size: 12px; margin-bottom: 22px; }
+
+  .score-severity {
+    display: inline-block; padding: 9px 28px; border-radius: 24px;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; border: 1px solid;
+  }
+
+  .sev-neg     { color: #5e8f6e; border-color: #a8c9b3; background: #eef5f1; }
+  .sev-pos     { color: #7058a8; border-color: #bbaee0; background: #f3f0fa; }
+
+  /* Breakdown */
+  .breakdown-section { background: var(--card); border: 1px solid var(--border-soft); border-radius: 14px; padding: 24px 26px; margin-bottom: 18px; box-shadow: var(--shadow-sm); }
+  .breakdown-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 300; margin-bottom: 18px; color: var(--text-muted); }
+  .breakdown-item { display: flex; align-items: center; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--border-soft); }
+  .breakdown-item:last-child { border-bottom: none; }
+  .breakdown-name { flex: 1; color: var(--text-muted); font-size: 11.5px; line-height: 1.35; }
+  .breakdown-bar-wrap { width: 80px; height: 4px; background: var(--border-soft); border-radius: 2px; overflow: hidden; }
+  .breakdown-bar { height: 100%; border-radius: 2px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .breakdown-val { width: 24px; text-align: right; font-size: 12px; font-weight: 500; color: var(--accent); }
+
+  /* Interpretación */
+  .interpretation { background: var(--card); border: 1px solid var(--border-soft); border-radius: 14px; padding: 24px 26px; margin-bottom: 18px; box-shadow: var(--shadow-sm); }
+  .interpretation h3 { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 300; margin-bottom: 14px; color: var(--text-muted); }
+
+  .interp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .interp-item { padding: 14px 16px; background: #f5faf7; border-radius: 8px; border: 1px solid var(--border-soft); }
+  .interp-range { color: var(--text-dim); font-size: 10px; letter-spacing: 0.1em; margin-bottom: 4px; text-transform: uppercase; }
+  .interp-desc  { color: var(--text-muted); font-size: 12px; margin-bottom: 3px; }
+  .interp-note  { color: var(--text-dim); font-size: 10.5px; font-style: italic; line-height: 1.4; }
+
+  .interp-item.current-neg { border-color: #a8c9b3; background: #eef5f1; }
+  .interp-item.current-neg .interp-desc { color: #4a7a5a; font-weight: 400; }
+  .interp-item.current-pos { border-color: #bbaee0; background: #f3f0fa; }
+  .interp-item.current-pos .interp-desc { color: #5838a0; font-weight: 400; }
+
+  /* Contexto clínico */
+  .context-box {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent2);
+    border-radius: 0 12px 12px 0;
+    padding: 18px 22px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .context-title { font-size: 10px; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent2); margin-bottom: 8px; }
+  .context-text  { font-size: 12px; color: var(--text-muted); line-height: 1.75; }
+
+  /* Botones finales */
+  .btn-copy {
+    display: block; width: 100%; margin-top: 18px; padding: 15px;
+    font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    background: transparent; border: 1px solid var(--accent);
+    border-radius: 8px; color: var(--accent); cursor: pointer; transition: all 0.18s ease;
+  }
+  .btn-copy:hover { background: var(--selected-bg); }
+
+  .btn-restart {
+    display: block; width: 100%; margin-top: 10px; padding: 15px;
+    font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 400;
+    letter-spacing: 0.2em; text-transform: uppercase;
+    background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text-muted); cursor: pointer; transition: all 0.18s ease;
+  }
+  .btn-restart:hover { border-color: var(--text-muted); color: var(--text); background: var(--surface); }
+
+  @media (max-width: 600px) {
+    .header h1 { font-size: 28px; }
+    .scale-legend { grid-template-columns: repeat(2, 1fr); }
+    .item-row { grid-template-columns: 1fr; gap: 10px; }
+    .score-btns { justify-content: flex-start; padding-left: 39px; }
+    .interp-grid { grid-template-columns: 1fr; }
+    .score-number { font-size: 72px; }
+    .items-card { padding: 8px 14px 16px; }
+    .score-btn { width: 44px; height: 44px; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+const items = [
+  "Activo/a, no paraba nunca.",
+  "Problemas de concentración, me distraía con facilidad.",
+  "Ansioso/a, preocupado/a.",
+  "Nervioso/a, inquieto/a.",
+  "Poco atento/a, 'en las nubes'.",
+  "Mucho temperamento, me enojaba con facilidad.",
+  "Explosiones de genio, rabietas.",
+  "Problemas para terminar las cosas que empezaba.",
+  "Testarudo/a, cabezota.",
+  "Imprudente, temerario/a, hacía travesuras.",
+  "Desobediente con mis padres, rebelde, contestador/a.",
+  "Irritable.",
+  "Descuidado/a, me organizaba mal.",
+  "Cambios de humor frecuentes: alegre, triste...",
+  "Enojado/a.",
+  "Impulsivo/a, hacía las cosas sin pensar.",
+  "Tendencia a ser inmaduro/a.",
+  "Sentimientos de culpa, remordimientos.",
+  "Perdía el control de mí mismo/a.",
+  "Tendencia a ser o a actuar irracionalmente.",
+  "Me metía en peleas.",
+  "Molestaba a otros niños.",
+  "Me dejaba llevar demasiado por los demás.",
+  "Dificultad para ponerme en el lugar de otros.",
+  "Problemas con las autoridades en la escuela."
+];
+
+const SCALE = [
+  { score: 0, label: "Nada o casi nada" },
+  { score: 1, label: "Un poco" },
+  { score: 2, label: "Moderadamente" },
+  { score: 3, label: "Mucho" }
+];
+
+// Punto de corte validado: ≥ 46 sugiere TDAH en la infancia (Ward et al., 1993)
+// Algunos estudios usan ≥ 36 o ≥ 46 según población
+const CUTOFF = 46;
+
+let answers     = new Array(items.length).fill(null);
+let showResults = false;
+
+function answered() { return answers.filter(a => a !== null).length; }
+function totalScore() { return answers.reduce((s, a) => s + (a || 0), 0); }
+
+function render() {
+  const app = document.getElementById('app');
+  if (showResults) { renderResults(app); return; }
+
+  const done = answered();
+  const pct  = (done / items.length) * 100;
+
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">Evaluación retrospectiva · Autoinforme</div>
+      <h1>Escala de Wender Utah <em>WURS-25</em></h1>
+      <p class="header-desc">25 ítems · Recuerde cómo era usted <strong>antes de los 12 años</strong>. Evalúa síntomas retrospectivos de TDAH en la infancia. Ward et al., Am J Psychiatry 1993.</p>
+    </div>
+
+    <div class="instruccion">
+      <div class="instruccion-title">Instrucciones</div>
+      <p>Conteste cada pregunta teniendo en cuenta lo que recuerda de cuando era <strong>niño/a (antes de los 12 años)</strong>. Seleccione el número que mejor describe con qué frecuencia o intensidad experimentó cada situación en esa época.<br><br>
+      <strong>0</strong> = Nada o casi nada &nbsp;·&nbsp; <strong>1</strong> = Un poco &nbsp;·&nbsp; <strong>2</strong> = Moderadamente &nbsp;·&nbsp; <strong>3</strong> = Mucho</p>
+    </div>
+
+    <div class="scale-legend">
+      ${SCALE.map(s => `
+        <div class="scale-leg-item">
+          <div class="scale-leg-num">${s.score}</div>
+          <div class="scale-leg-txt">${s.label}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span class="progress-label">Completado</span>
+        <span class="progress-count">${done} / ${items.length}</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${pct}%"></div>
+      </div>
+    </div>
+
+    <div class="items-card">
+      <div style="padding:16px 0 8px; font-size:11px; font-weight:500; letter-spacing:0.15em; text-transform:uppercase; color:var(--text-dim);">Cuando era niño/a (antes de los 12 años)…</div>
+      ${items.map((item, i) => `
+        <div class="item-row ${answers[i] !== null ? 'answered' : ''}">
+          <div class="item-left">
+            <span class="item-num">${i + 1}</span>
+            <span class="item-text">${item}</span>
+          </div>
+          <div class="score-btns">
+            ${SCALE.map(s => `
+              <button class="score-btn ${answers[i] === s.score ? 'active' : ''}"
+                      onclick="select(${i}, ${s.score})"
+                      title="${s.label}">
+                ${s.score}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    <button class="btn-result" onclick="verResultado()" ${done < items.length ? 'disabled' : ''}>
+      ${done < items.length ? `Faltan ${items.length - done} preguntas` : 'Ver resultado →'}
+    </button>
+  `;
+}
+
+function renderResults(app) {
+  const total   = totalScore();
+  const positivo = total >= CUTOFF;
+  const color   = positivo ? '#7058a8' : '#3a8060';
+
+  app.innerHTML = `
+    <div class="header">
+      <div class="header-label">Resultado de la evaluación</div>
+      <h1>Escala de Wender Utah <em>WURS-25</em></h1>
+    </div>
+
+    <div class="results">
+
+      <div class="score-display">
+        <div class="score-label">Puntuación total</div>
+        <div class="score-number" style="color:${color}">${total}</div>
+        <div class="score-max">de 75 puntos posibles · Punto de corte: ≥ ${CUTOFF}</div>
+        <span class="score-severity ${positivo ? 'sev-pos' : 'sev-neg'}">
+          ${positivo ? 'Sugiere TDAH en la infancia' : 'Por debajo del punto de corte'}
+        </span>
+      </div>
+
+      <div class="context-box">
+        <div class="context-title">Contexto clínico</div>
+        <div class="context-text">
+          ${positivo
+            ? `Una puntuación de <strong>${total}/75</strong> supera el punto de corte establecido (≥ ${CUTOFF}), lo que sugiere la presencia de síntomas compatibles con TDAH en la infancia. Esto apoya la hipótesis de un TDAH de inicio en la infancia en la evaluación del adulto. <strong>Este resultado debe interpretarse junto con la evaluación clínica completa y escalas actuales</strong> como la ASRS/Conners.`
+            : `Una puntuación de <strong>${total}/75</strong> se encuentra por debajo del punto de corte (≥ ${CUTOFF}). Esto no apoya fuertemente la presencia de síntomas de TDAH en la infancia según el criterio de Wender Utah. El diagnóstico de TDAH adulto requiere evidencia de síntomas desde la infancia; sin embargo, el diagnóstico final debe basarse en la evaluación clínica completa.`
+          }
+        </div>
+      </div>
+
+      <div class="breakdown-section">
+        <div class="breakdown-title">Desglose por ítem</div>
+        ${items.map((item, i) => {
+          const v = answers[i] || 0;
+          return `
+            <div class="breakdown-item">
+              <div class="breakdown-name">${i+1}. ${item}</div>
+              <div class="breakdown-bar-wrap"><div class="breakdown-bar" style="width:${(v/3)*100}%"></div></div>
+              <div class="breakdown-val">${v}/3</div>
+            </div>`;
+        }).join('')}
+      </div>
+
+      <div class="interpretation">
+        <h3>Interpretación del puntaje</h3>
+        <div class="interp-grid">
+          <div class="interp-item ${!positivo ? 'current-neg' : ''}">
+            <div class="interp-range">0 – ${CUTOFF - 1} puntos</div>
+            <div class="interp-desc">Por debajo del punto de corte</div>
+            <div class="interp-note">No sugiere TDAH en la infancia según criterio Wender Utah.</div>
+          </div>
+          <div class="interp-item ${positivo ? 'current-pos' : ''}">
+            <div class="interp-range">≥ ${CUTOFF} puntos</div>
+            <div class="interp-desc">Sugiere TDAH en la infancia</div>
+            <div class="interp-note">Apoya la hipótesis de inicio temprano en la evaluación del TDAH adulto.</div>
+          </div>
+        </div>
+        <p style="margin-top:16px; color:var(--text-dim); font-size:11px; line-height:1.7;">
+          Nota: La WURS-25 es una escala retrospectiva de autoinforme. Evalúa síntomas de la infancia desde la memoria adulta, lo que implica limitaciones de sesgo de recuerdo. Debe usarse junto con otras fuentes de información (familiares, reportes escolares) y escalas actuales. Punto de corte ≥ 46: Ward et al., Am J Psychiatry 1993;150:885-90.
+        </p>
+      </div>
+
+      <button class="btn-copy" id="btnCopy" onclick="copyToClipboard()">⎘ Copiar para ficha clínica</button>
+      <button class="btn-restart" onclick="restart()">↩ Nueva evaluación</button>
+    </div>
+  `;
+}
+
+function buildPlainText() {
+  const total    = totalScore();
+  const positivo = total >= CUTOFF;
+  const date     = new Date().toLocaleDateString('es-CL', { day:'2-digit', month:'2-digit', year:'numeric' });
+  const labs     = ['Nada o casi nada (0)', 'Un poco (1)', 'Moderadamente (2)', 'Mucho (3)'];
+
+  const lines = [];
+  lines.push('WURS-25 — ESCALA DE WENDER UTAH (RETROSPECTIVA INFANCIA)');
+  lines.push('Fecha de aplicacion: ' + date);
+  lines.push('Tipo: Autoinforme retrospectivo (antes de los 12 anos)');
+  lines.push('');
+  lines.push('ITEMS Y PUNTAJES:');
+  items.forEach((item, i) => {
+    const v = answers[i] || 0;
+    lines.push((i+1) + '. ' + item);
+    lines.push('   ' + labs[v]);
+  });
+  lines.push('');
+  lines.push('PUNTAJE TOTAL: ' + total + ' / 75');
+  lines.push('PUNTO DE CORTE: >= ' + CUTOFF);
+  lines.push('RESULTADO: ' + (positivo
+    ? 'POSITIVO — Sugiere sintomas de TDAH en la infancia (>= ' + CUTOFF + ')'
+    : 'NEGATIVO — Por debajo del punto de corte (< ' + CUTOFF + ')'));
+  lines.push('');
+  lines.push('Nota: Escala retrospectiva de autoinforme. Interpretar junto con evaluacion clinica');
+  lines.push('completa, otras fuentes de informacion y escalas actuales (ASRS/Conners).');
+  lines.push('Ref: Ward MF et al. Am J Psychiatry. 1993;150(6):885-890.');
+  return lines.join('\n');
+}
+
+async function copyToClipboard() {
+  const text = buildPlainText();
+  const btn  = document.getElementById('btnCopy');
+  try {
+    await navigator.clipboard.writeText(text);
+    btn.textContent = '✓ Copiado';
+    btn.style.borderColor = '#7058a8';
+    btn.style.color = '#7058a8';
+    setTimeout(() => { btn.textContent = '⎘ Copiar para ficha clínica'; btn.style.borderColor = ''; btn.style.color = ''; }, 2500);
+  } catch(e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => { btn.textContent = '⎘ Copiar para ficha clínica'; }, 2500);
+  }
+}
+
+function select(i, v)   { answers[i] = v; render(); }
+function verResultado() { if (answered() < items.length) return; showResults = true; render(); }
+function restart()      { answers = new Array(items.length).fill(null); showResults = false; render(); }
+
+render();
+</script>
+</body>
+</html>
