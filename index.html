@@ -1,17 +1,596 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Solaris – Herramientas clínicas</title>
-</head>
-<body style="font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: auto;">
-  <h1>Herramientas clínicas – Solaris</h1>
-  <p>Acceso a escalas clínicas interactivas.</p>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solaris — Herramientas Clínicas</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;1,300&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f2ed;
+    --surface: #ede9e2;
+    --card: #ffffff;
+    --border: #ddd8cf;
+    --border-soft: #e8e4dc;
+    --accent: #7a9e87;
+    --accent2: #c4856a;
+    --accent3: #8fa8b8;
+    --text: #3a3530;
+    --text-muted: #7a7168;
+    --text-dim: #b0a89e;
+    --shadow: 0 2px 16px rgba(80,60,40,0.07);
+    --shadow-sm: 0 1px 6px rgba(80,60,40,0.05);
+    --shadow-hover: 0 6px 24px rgba(80,60,40,0.12);
+  }
 
-  <ul>
-    <li><a href="phq9_interactivo.html">PHQ-9 – Depresión</a></li>
-    <li><a href="madrs_interactivo (3).html">MADRS – Depresión</a></li>
-  </ul>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Jost', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 70% 50% at 15% 10%, rgba(122,158,135,0.07) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 60% at 90% 85%, rgba(196,133,106,0.06) 0%, transparent 55%),
+      radial-gradient(ellipse 40% 40% at 80% 15%, rgba(143,168,184,0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page {
+    position: relative;
+    z-index: 1;
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 56px 28px 80px;
+  }
+
+  /* ── Cabecera ── */
+  .site-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 32px;
+    margin-bottom: 52px;
+    padding-bottom: 36px;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+
+  .header-left { flex: 1; min-width: 260px; }
+
+  .logo-wrap {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 20px;
+  }
+
+  .logo-img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    opacity: 0.88;
+    filter: sepia(0.15);
+  }
+
+  .logo-text { }
+
+  .logo-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 300;
+    color: var(--text);
+    letter-spacing: 0.04em;
+    line-height: 1;
+    margin-bottom: 3px;
+  }
+
+  .logo-sub {
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .header-tagline {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--text-muted);
+    line-height: 1.6;
+    max-width: 440px;
+  }
+
+  .header-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    padding-top: 6px;
+  }
+
+  .contact-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    color: var(--text-muted);
+    font-size: 12px;
+    transition: color 0.15s;
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+  }
+
+  .contact-item:hover {
+    color: var(--text);
+    border-color: var(--border-soft);
+    background: var(--card);
+  }
+
+  .contact-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .contact-icon.web { background: rgba(122,158,135,0.12); color: var(--accent); }
+  .contact-icon.wa  { background: rgba(37,211,102,0.10);  color: #25d366; }
+  .contact-icon.ig  { background: rgba(193,53,132,0.09);  color: #c13584; }
+
+  /* ── Intro editorial ── */
+  .editorial-note {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0;
+    padding: 18px 24px;
+    margin-bottom: 44px;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+
+  .editorial-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; opacity: 0.7; }
+
+  .editorial-text { font-size: 12px; color: var(--text-muted); line-height: 1.75; }
+  .editorial-text strong { color: var(--text); font-weight: 500; }
+
+  /* ── Sección ── */
+  .section { margin-bottom: 44px; }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .section-line { flex: 1; height: 1px; background: var(--border-soft); }
+
+  /* ── Grid de escalas ── */
+  .scales-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+  }
+
+  .scale-card {
+    background: var(--card);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    padding: 20px 22px;
+    text-decoration: none;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.18s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .scale-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--card-color, var(--accent));
+    border-radius: 12px 0 0 12px;
+    transition: width 0.18s ease;
+  }
+
+  .scale-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+    border-color: var(--border);
+  }
+
+  .scale-card:hover::before { width: 4px; }
+
+  .scale-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+    background: rgba(122,158,135,0.1);
+    color: var(--accent);
+  }
+
+  .scale-info { flex: 1; min-width: 0; }
+
+  .scale-code {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--card-color, var(--accent));
+    margin-bottom: 3px;
+  }
+
+  .scale-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px;
+    font-weight: 400;
+    color: var(--text);
+    line-height: 1.25;
+    margin-bottom: 5px;
+  }
+
+  .scale-desc {
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.45;
+  }
+
+  .scale-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 9.5px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 8px;
+    border: 1px solid;
+    background: transparent;
+  }
+
+  .tag-hetero { color: #8fa8b8; border-color: rgba(143,168,184,0.4); }
+  .tag-auto   { color: #7a9e87; border-color: rgba(122,158,135,0.4); }
+  .tag-cribado{ color: #b09050; border-color: rgba(176,144,80,0.4);  }
+
+  /* ── Pie de página ── */
+  .site-footer {
+    margin-top: 60px;
+    padding-top: 32px;
+    border-top: 1px solid var(--border-soft);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .footer-left { }
+
+  .footer-solaris {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    font-weight: 300;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    letter-spacing: 0.05em;
+  }
+
+  .footer-copy {
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.6;
+    max-width: 420px;
+  }
+
+  .footer-right {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-align: right;
+    line-height: 1.7;
+  }
+
+  @media (max-width: 600px) {
+    .page { padding: 36px 18px 60px; }
+    .site-header { flex-direction: column; gap: 24px; }
+    .header-right { align-items: flex-start; }
+    .scales-grid { grid-template-columns: 1fr; }
+    .site-footer { flex-direction: column; }
+    .footer-right { text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── Cabecera ── -->
+  <header class="site-header">
+    <div class="header-left">
+      <div class="logo-wrap">
+        <img class="logo-img" src="data:image/webp;base64,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" alt="Solaris logo">
+        <div class="logo-text">
+          <div class="logo-name">solaris</div>
+          <div class="logo-sub">espacio de bienestar y salud mental</div>
+        </div>
+      </div>
+      <p class="header-tagline">Herramientas clínicas interactivas para la evaluación en salud mental.</p>
+    </div>
+
+    <div class="header-right">
+      <a class="contact-item" href="https://www.centrosolaris.cl" target="_blank" rel="noopener">
+        <span class="contact-icon web">🌐</span>
+        <span>centrosolaris.cl</span>
+      </a>
+      <a class="contact-item" href="https://wa.me/56928054021" target="_blank" rel="noopener">
+        <span class="contact-icon wa">💬</span>
+        <span>WhatsApp</span>
+      </a>
+      <a class="contact-item" href="https://www.instagram.com/solarisespacio/" target="_blank" rel="noopener">
+        <span class="contact-icon ig">📷</span>
+        <span>@solarisespacio</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- ── Nota editorial ── -->
+  <div class="editorial-note">
+    <div class="editorial-icon">📋</div>
+    <div class="editorial-text">
+      Las escalas contenidas en este sitio han sido <strong>reproducidas desde fuentes clínicas validadas</strong> y adaptadas al español según versiones oficiales. Son de uso libre para profesionales de la salud mental y estudiantes con fines clínicos y académicos. <strong>No reemplazan la evaluación clínica</strong>; son instrumentos de apoyo diagnóstico.
+    </div>
+  </div>
+
+  <!-- ── Sección: Depresión ── -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-title">Depresión</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="scales-grid">
+
+      <a class="scale-card" href="madrs_interactivo (3).html" style="--card-color: #7a9e87">
+        <div class="scale-icon" style="background:rgba(122,158,135,0.12); color:#7a9e87">🌿</div>
+        <div class="scale-info">
+          <div class="scale-code">MADRS</div>
+          <div class="scale-name">Escala de Depresión Montgomery-Åsberg</div>
+          <div class="scale-desc">10 ítems · Versión CIBERSAM validada en español</div>
+          <span class="scale-tag tag-hetero">Heteroadministrada</span>
+        </div>
+      </a>
+
+      <a class="scale-card" href="phq9_interactivo.html" style="--card-color: #6070a8">
+        <div class="scale-icon" style="background:rgba(96,112,168,0.12); color:#6070a8">🔵</div>
+        <div class="scale-info">
+          <div class="scale-code">PHQ-9</div>
+          <div class="scale-name">Cuestionario de Salud del Paciente</div>
+          <div class="scale-desc">9 ítems · Últimas 2 semanas</div>
+          <span class="scale-tag tag-auto">Autoinforme</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Sección: Ansiedad ── -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-title">Ansiedad</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="scales-grid">
+
+      <a class="scale-card" href="bai_beck_interactivo.html" style="--card-color: #8fa8b8">
+        <div class="scale-icon" style="background:rgba(143,168,184,0.12); color:#8fa8b8">🌊</div>
+        <div class="scale-info">
+          <div class="scale-code">BAI</div>
+          <div class="scale-name">Inventario de Ansiedad de Beck</div>
+          <div class="scale-desc">21 síntomas · Última semana</div>
+          <span class="scale-tag tag-auto">Autoinforme</span>
+        </div>
+      </a>
+
+      <a class="scale-card" href="gad7_interactivo (2).html" style="--card-color: #9aaa7a">
+        <div class="scale-icon" style="background:rgba(154,170,122,0.12); color:#9aaa7a">🌾</div>
+        <div class="scale-info">
+          <div class="scale-code">GAD-7</div>
+          <div class="scale-name">Escala de Ansiedad Generalizada</div>
+          <div class="scale-desc">7 ítems · Últimas 2 semanas · Spitzer et al.</div>
+          <span class="scale-tag tag-auto">Autoinforme</span>
+        </div>
+      </a>
+
+      <a class="scale-card" href="hama_interactivo.html" style="--card-color: #b08878">
+        <div class="scale-icon" style="background:rgba(176,136,120,0.12); color:#b08878">🌸</div>
+        <div class="scale-info">
+          <div class="scale-code">HAM-A</div>
+          <div class="scale-name">Escala de Ansiedad de Hamilton</div>
+          <div class="scale-desc">14 ítems · Ansiedad psíquica y somática</div>
+          <span class="scale-tag tag-hetero">Heteroadministrada</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Sección: Estado de ánimo ── -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-title">Estado de ánimo</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="scales-grid">
+
+      <a class="scale-card" href="ymrs_interactivo.html" style="--card-color: #c88030">
+        <div class="scale-icon" style="background:rgba(200,128,48,0.12); color:#c88030">🟡</div>
+        <div class="scale-info">
+          <div class="scale-code">YMRS</div>
+          <div class="scale-name">Escala de Manías de Young</div>
+          <div class="scale-desc">11 ítems · Puntuación máx. 60 pts</div>
+          <span class="scale-tag tag-hetero">Heteroadministrada</span>
+        </div>
+      </a>
+
+      <a class="scale-card" href="kmdrs_interactivo.html" style="--card-color: #7058a8">
+        <div class="scale-icon" style="background:rgba(112,88,168,0.12); color:#7058a8">🔮</div>
+        <div class="scale-info">
+          <div class="scale-code">KMDRS</div>
+          <div class="scale-name">Escala de Depresión Mixta de Koukopoulos</div>
+          <div class="scale-desc">13 ítems · Sani et al. 2018</div>
+          <span class="scale-tag tag-hetero">Heteroadministrada</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Sección: TDAH ── -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-title">TDAH</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="scales-grid">
+
+      <a class="scale-card" href="conners_asrs_interactivo.html" style="--card-color: #5a8a72">
+        <div class="scale-icon" style="background:rgba(90,138,114,0.12); color:#5a8a72">🌲</div>
+        <div class="scale-info">
+          <div class="scale-code">ASRS · Conners</div>
+          <div class="scale-name">Escala Conners para TDAH en Adultos</div>
+          <div class="scale-desc">18 ítems · Inatención e hiperactividad · Últimos 6 meses</div>
+          <span class="scale-tag tag-auto">Autoinforme</span>
+        </div>
+      </a>
+
+      <a class="scale-card" href="wurs25_interactivo.html" style="--card-color: #3a8060">
+        <div class="scale-icon" style="background:rgba(58,128,96,0.12); color:#3a8060">🟢</div>
+        <div class="scale-info">
+          <div class="scale-code">WURS-25</div>
+          <div class="scale-name">Escala de Wender Utah</div>
+          <div class="scale-desc">25 ítems · Síntomas retrospectivos de infancia</div>
+          <span class="scale-tag tag-auto">Autoinforme</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Sección: Cribado ── -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-title">Cribado y espectro</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="scales-grid">
+
+      <a class="scale-card" href="aq10_interactivo.html" style="--card-color: #8878b0">
+        <div class="scale-icon" style="background:rgba(136,120,176,0.12); color:#8878b0">💜</div>
+        <div class="scale-info">
+          <div class="scale-code">AQ-10</div>
+          <div class="scale-name">Cociente de Espectro Autista</div>
+          <div class="scale-desc">10 ítems · Cribado TEA adultos · Cambridge</div>
+          <span class="scale-tag tag-cribado">Cribado</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Sección: Funcionamiento ── -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-title">Funcionamiento y discapacidad</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="scales-grid">
+
+      <a class="scale-card" href="whodas_gaf_interactivo.html" style="--card-color: #4a8870">
+        <div class="scale-icon" style="background:rgba(74,136,112,0.12); color:#4a8870">🌿</div>
+        <div class="scale-info">
+          <div class="scale-code">WHODAS 2.0 + GAF</div>
+          <div class="scale-name">Evaluación de Discapacidad OMS</div>
+          <div class="scale-desc">12 ítems · Equivalencia GAF automática · Últimos 30 días</div>
+          <span class="scale-tag tag-hetero">Heteroadministrada</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Sección: Neuropsiquiatría ── -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-title">Neuropsiquiatría</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="scales-grid">
+
+      <a class="scale-card" href="npi_q_interactivo.html" style="--card-color: #9a7848">
+        <div class="scale-icon" style="background:rgba(154,120,72,0.12); color:#9a7848">🟤</div>
+        <div class="scale-info">
+          <div class="scale-code">NPI-Q</div>
+          <div class="scale-name">Inventario Neuropsiquiátrico</div>
+          <div class="scale-desc">12 síntomas conductuales · NACC UDS · Por informante</div>
+          <span class="scale-tag tag-hetero">Por informante</span>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <!-- ── Pie de página ── -->
+  <footer class="site-footer">
+    <div class="footer-left">
+      <div class="footer-solaris">solaris · espacio de bienestar y salud mental</div>
+      <p class="footer-copy">
+        Desarrollo digital para uso clínico y académico. Las escalas han sido reproducidas desde fuentes validadas y adaptadas al español. Su uso no reemplaza la evaluación profesional ni constituye diagnóstico. Para uso exclusivo por profesionales de la salud mental.
+      </p>
+    </div>
+    <div class="footer-right">
+      <a href="https://www.centrosolaris.cl" target="_blank" style="color:var(--accent); text-decoration:none;">centrosolaris.cl</a><br>
+      <a href="https://wa.me/56928054021" target="_blank" style="color:var(--text-dim); text-decoration:none;">+56 9 2805 4021</a><br>
+      <a href="https://www.instagram.com/solarisespacio/" target="_blank" style="color:var(--text-dim); text-decoration:none;">@solarisespacio</a>
+    </div>
+  </footer>
+
+</div>
 </body>
 </html>
